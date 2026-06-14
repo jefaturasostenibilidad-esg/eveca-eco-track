@@ -13,7 +13,12 @@ import { Route as PendienteRouteImport } from './routes/pendiente'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedZonasVerdesRouteImport } from './routes/_authenticated/zonas-verdes'
+import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
+import { Route as AuthenticatedEfluentesRouteImport } from './routes/_authenticated/efluentes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAmbientalRouteImport } from './routes/_authenticated/ambiental'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const PendienteRoute = PendienteRouteImport.update({
   id: '/pendiente',
@@ -34,9 +39,35 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedZonasVerdesRoute =
+  AuthenticatedZonasVerdesRouteImport.update({
+    id: '/zonas-verdes',
+    path: '/zonas-verdes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEfluentesRoute = AuthenticatedEfluentesRouteImport.update({
+  id: '/efluentes',
+  path: '/efluentes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAmbientalRoute = AuthenticatedAmbientalRouteImport.update({
+  id: '/ambiental',
+  path: '/ambiental',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
@@ -44,13 +75,23 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/pendiente': typeof PendienteRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/ambiental': typeof AuthenticatedAmbientalRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/efluentes': typeof AuthenticatedEfluentesRoute
+  '/reportes': typeof AuthenticatedReportesRoute
+  '/zonas-verdes': typeof AuthenticatedZonasVerdesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/pendiente': typeof PendienteRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/ambiental': typeof AuthenticatedAmbientalRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/efluentes': typeof AuthenticatedEfluentesRoute
+  '/reportes': typeof AuthenticatedReportesRoute
+  '/zonas-verdes': typeof AuthenticatedZonasVerdesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +99,48 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/pendiente': typeof PendienteRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/ambiental': typeof AuthenticatedAmbientalRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/efluentes': typeof AuthenticatedEfluentesRoute
+  '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/_authenticated/zonas-verdes': typeof AuthenticatedZonasVerdesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/pendiente' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/pendiente'
+    | '/admin'
+    | '/ambiental'
+    | '/dashboard'
+    | '/efluentes'
+    | '/reportes'
+    | '/zonas-verdes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/pendiente' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/pendiente'
+    | '/admin'
+    | '/ambiental'
+    | '/dashboard'
+    | '/efluentes'
+    | '/reportes'
+    | '/zonas-verdes'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/pendiente'
+    | '/_authenticated/admin'
+    | '/_authenticated/ambiental'
     | '/_authenticated/dashboard'
+    | '/_authenticated/efluentes'
+    | '/_authenticated/reportes'
+    | '/_authenticated/zonas-verdes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,6 +180,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/zonas-verdes': {
+      id: '/_authenticated/zonas-verdes'
+      path: '/zonas-verdes'
+      fullPath: '/zonas-verdes'
+      preLoaderRoute: typeof AuthenticatedZonasVerdesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reportes': {
+      id: '/_authenticated/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof AuthenticatedReportesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/efluentes': {
+      id: '/_authenticated/efluentes'
+      path: '/efluentes'
+      fullPath: '/efluentes'
+      preLoaderRoute: typeof AuthenticatedEfluentesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -118,15 +208,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ambiental': {
+      id: '/_authenticated/ambiental'
+      path: '/ambiental'
+      fullPath: '/ambiental'
+      preLoaderRoute: typeof AuthenticatedAmbientalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAmbientalRoute: typeof AuthenticatedAmbientalRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEfluentesRoute: typeof AuthenticatedEfluentesRoute
+  AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
+  AuthenticatedZonasVerdesRoute: typeof AuthenticatedZonasVerdesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAmbientalRoute: AuthenticatedAmbientalRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEfluentesRoute: AuthenticatedEfluentesRoute,
+  AuthenticatedReportesRoute: AuthenticatedReportesRoute,
+  AuthenticatedZonasVerdesRoute: AuthenticatedZonasVerdesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
