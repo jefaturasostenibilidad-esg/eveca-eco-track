@@ -9,10 +9,10 @@ import {
   FileText,
   Settings,
   LogOut,
-  Bell,
   User,
   Menu,
 } from "lucide-react";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -144,9 +144,7 @@ function AppShell() {
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-            </Button>
+            <NotificationsBell />
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm">
               <User className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium">{profile?.nombre_completo}</span>
