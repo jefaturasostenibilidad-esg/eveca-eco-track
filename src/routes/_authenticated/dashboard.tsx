@@ -28,10 +28,18 @@ interface Reporte { fecha: string; }
 
 const COLORS = ["#16a34a", "#f59e0b", "#3b82f6", "#a855f7", "#ef4444", "#0ea5e9", "#84cc16", "#f97316"];
 
-function mesActualISO() {
+function hoyISO() {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, "0");
-  return `${d.getFullYear()}-${m}`;
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+function fechaBonita(iso: string) {
+  // iso: YYYY-MM-DD
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("es-CO", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
 }
 
 function Dashboard() {
@@ -75,53 +83,53 @@ function Dashboard() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const mes = mesActualISO();
+  const hoy = hoyISO();
 
   const kpis = useMemo(() => {
-    const pomeMes = efluentes
-      .filter((e) => e.fecha.startsWith(mes))
+    const pomeHoy = efluentes
+      .filter((e) => e.fecha === hoy)
       .reduce((s, e) => s + (e.cantidad_pome_m3 ?? 0), 0);
-    const aceiteMes = efluentes
-      .filter((e) => e.fecha.startsWith(mes))
+    const aceiteHoy = efluentes
+      .filter((e) => e.fecha === hoy)
       .reduce((s, e) => s + (e.cantidad_aceite_recuperado_litros ?? 0), 0);
-    const residuosMes = ambiental
-      .filter((r) => r.fecha.startsWith(mes))
+    const residuosHoy = ambiental
+      .filter((r) => r.fecha === hoy)
       .reduce((s, r) => s + (r.cantidad_residuo_kg ?? 0), 0);
-    const areaMes = zonas
-      .filter((z) => z.fecha.startsWith(mes))
+    const areaHoy = zonas
+      .filter((z) => z.fecha === hoy)
       .reduce((s, z) => s + (z.area_m2 ?? 0), 0);
-    const reportesMes = reportes.filter((r) => r.fecha.startsWith(mes)).length;
-    const contingencias = efluentes.filter((e) => e.uso_contingencia && e.fecha.startsWith(mes)).length;
-    return { pomeMes, aceiteMes, residuosMes, areaMes, reportesMes, contingencias };
-  }, [efluentes, ambiental, zonas, reportes, mes]);
+    const reportesHoy = reportes.filter((r) => r.fecha === hoy).length;
+    const contingencias = efluentes.filter((e) => e.uso_contingencia && e.fecha === hoy).length;
+    return { pomeHoy, aceiteHoy, residuosHoy, areaHoy, reportesHoy, contingencias };
+  }, [efluentes, ambiental, zonas, reportes, hoy]);
 
-  // Serie mensual POME (últimos 6 meses)
+  // Serie diaria — últimos 30 días
   const serieEfluentes = useMemo(() => {
-    const byMonth: Record<string, { mes: string; pome: number; biodigestor: number; aceite: number }> = {};
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(); d.setMonth(d.getMonth() - i);
-      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      byMonth[k] = { mes: k.slice(5), pome: 0, biodigestor: 0, aceite: 0 };
+    const byDay: Record<string, { dia: string; pome: number; biodigestor: number; aceite: number }> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      byDay[k] = { dia: k.slice(5), pome: 0, biodigestor: 0, aceite: 0 };
     }
     efluentes.forEach((e) => {
-      const k = e.fecha.slice(0, 7);
-      if (byMonth[k]) {
-        byMonth[k].pome += e.cantidad_pome_m3 ?? 0;
-        byMonth[k].biodigestor += e.cantidad_pome_biodigestor_m3 ?? 0;
-        byMonth[k].aceite += e.cantidad_aceite_recuperado_litros ?? 0;
+      const k = e.fecha.slice(0, 10);
+      if (byDay[k]) {
+        byDay[k].pome += e.cantidad_pome_m3 ?? 0;
+        byDay[k].biodigestor += e.cantidad_pome_biodigestor_m3 ?? 0;
+        byDay[k].aceite += e.cantidad_aceite_recuperado_litros ?? 0;
       }
     });
-    return Object.values(byMonth);
+    return Object.values(byDay);
   }, [efluentes]);
 
-  // Distribución residuos por categoría (mes)
+  // Distribución residuos por categoría (hoy)
   const residuosPorCat = useMemo(() => {
     const map: Record<string, number> = {};
-    ambiental.filter((r) => r.fecha.startsWith(mes) && r.cantidad_residuo_kg).forEach((r) => {
+    ambiental.filter((r) => r.fecha === hoy && r.cantidad_residuo_kg).forEach((r) => {
       map[r.categoria] = (map[r.categoria] ?? 0) + (r.cantidad_residuo_kg ?? 0);
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [ambiental, mes]);
+  }, [ambiental, hoy]);
 
   // Zonas verdes por actividad
   const zonasPorAct = useMemo(() => {
