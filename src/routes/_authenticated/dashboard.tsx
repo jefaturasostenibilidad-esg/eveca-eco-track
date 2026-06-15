@@ -145,11 +145,11 @@ function Dashboard() {
   }
 
   const kpiCards = [
-    { icon: Droplets, label: "POME procesado (m³)", val: kpis.pomeMes.toFixed(1), color: "text-primary bg-primary/10" },
-    { icon: Droplets, label: "Aceite recuperado (L)", val: kpis.aceiteMes.toFixed(1), color: "text-amber-foreground bg-amber/20" },
-    { icon: Leaf, label: "Residuos del mes (kg)", val: kpis.residuosMes.toFixed(1), color: "text-success bg-success/10" },
-    { icon: TreePine, label: "Área intervenida (m²)", val: kpis.areaMes.toFixed(0), color: "text-amber-foreground bg-amber/20" },
-    { icon: FileText, label: "Reportes del mes", val: String(kpis.reportesMes), color: "text-primary bg-secondary" },
+    { icon: Droplets, label: "POME procesado hoy (m³)", val: kpis.pomeHoy.toFixed(1), color: "text-primary bg-primary/10" },
+    { icon: Droplets, label: "Aceite recuperado hoy (L)", val: kpis.aceiteHoy.toFixed(1), color: "text-amber-foreground bg-amber/20" },
+    { icon: Leaf, label: "Residuos del día (kg)", val: kpis.residuosHoy.toFixed(1), color: "text-success bg-success/10" },
+    { icon: TreePine, label: "Área intervenida hoy (m²)", val: kpis.areaHoy.toFixed(0), color: "text-amber-foreground bg-amber/20" },
+    { icon: FileText, label: "Reportes de hoy", val: String(kpis.reportesHoy), color: "text-primary bg-secondary" },
   ];
 
 
@@ -186,14 +186,14 @@ function Dashboard() {
           <img src={evecaLogo.url} alt="EVECA" className="h-12 w-auto object-contain hidden sm:block" />
           <div>
             <h1 className="text-2xl font-display font-bold text-primary">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Tablero unificado · datos en tiempo real · mes en curso {mes}</p>
+            <p className="text-sm text-muted-foreground capitalize">Tablero diario · datos en tiempo real · {fechaBonita(hoy)}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {kpis.contingencias > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-sm">
               <AlertTriangle className="w-4 h-4" />
-              {kpis.contingencias} contingencia(s) este mes
+              {kpis.contingencias} contingencia(s) hoy
             </div>
           )}
           <Button
@@ -240,14 +240,14 @@ function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" /> Efluentes — últimos 6 meses
+              <TrendingUp className="w-4 h-4 text-primary" /> Efluentes — últimos 30 días
             </CardTitle>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={serieEfluentes}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="dia" tick={{ fontSize: 11 }} interval={2} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
