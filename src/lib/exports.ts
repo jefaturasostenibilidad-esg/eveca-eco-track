@@ -288,29 +288,25 @@ export async function exportDashboardImage(element: HTMLElement) {
   wrap.querySelector("#__dash-clone")!.appendChild(clone);
   document.body.appendChild(wrap);
 
-  // Wait a tick for layout
-  await new Promise((r) => setTimeout(r, 200));
+  // Allow recharts SVGs and the logo image to render before capture
+  await new Promise((r) => setTimeout(r, 400));
 
   try {
-    const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(wrap, {
+    const { toPng } = await import("html-to-image");
+    const dataUrl = await toPng(wrap, {
       backgroundColor: "#f7faf6",
-      scale: 2,
-      useCORS: true,
-      logging: false,
+      pixelRatio: 2,
+      cacheBust: true,
+      skipFonts: true,
     });
-    const blob: Blob = await new Promise((resolve) =>
-      canvas.toBlob((b: Blob | null) => resolve(b as Blob), "image/png", 1),
-    );
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = dataUrl;
     a.download = `EVECA_Dashboard_${fmtFileStamp(now)}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
   } finally {
     wrap.remove();
   }
 }
+
