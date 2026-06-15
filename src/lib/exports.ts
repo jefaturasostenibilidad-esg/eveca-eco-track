@@ -1,5 +1,9 @@
-import type ExcelJSType from "exceljs";
-type ExcelJS = typeof ExcelJSType;
+// Heavy libs (exceljs, html2canvas) are dynamically imported inside the
+// exported functions to avoid Vite dev-server pre-bundling errors and to keep
+// them out of the main bundle / SSR path.
+type AnyWorkbook = any;
+type AnyWorksheet = any;
+type AnyFill = any;
 import { supabase } from "@/integrations/supabase/client";
 import evecaLogo from "@/assets/eveca-logo.png.asset.json";
 
