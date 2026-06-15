@@ -192,6 +192,7 @@ const TABLES: { table: string; sheet: string }[] = [
 ];
 
 export async function exportFullDatabaseExcel() {
+  const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "EVECA Sostenibilidad";
   wb.created = new Date();
@@ -291,6 +292,7 @@ export async function exportDashboardImage(element: HTMLElement) {
   await new Promise((r) => setTimeout(r, 200));
 
   try {
+    const html2canvas = (await import("html2canvas")).default;
     const canvas = await html2canvas(wrap, {
       backgroundColor: "#f7faf6",
       scale: 2,
@@ -298,7 +300,7 @@ export async function exportDashboardImage(element: HTMLElement) {
       logging: false,
     });
     const blob: Blob = await new Promise((resolve) =>
-      canvas.toBlob((b) => resolve(b as Blob), "image/png", 1),
+      canvas.toBlob((b: Blob | null) => resolve(b as Blob), "image/png", 1),
     );
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
