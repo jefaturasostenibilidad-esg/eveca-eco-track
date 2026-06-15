@@ -307,6 +307,8 @@ function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      </div>
     </div>
   );
 }
+
