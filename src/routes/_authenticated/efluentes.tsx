@@ -57,6 +57,28 @@ const TANQUES_INFO: Record<Tanque, { label: string; sub: string; color: string }
   TK4: { label: "TK4", sub: "Abono Líquido / Contingencia", color: "bg-purple-500/15 text-purple-700 border-purple-300" },
 };
 
+// Factores de conversión volumétrica (m³ por cm de altura) según diámetro del biotanque ITM.
+// TK1 (Biotanque Grande Ø 17.13 m): 0.230438 m³/cm
+// TK3 (Biotanque Pequeño Ø 7.45 m): 0.043589 m³/cm
+const FACTOR_POME_M3_POR_CM: Record<Tanque, number> = {
+  TK1: 0.230438,
+  TK2: 0,
+  TK3: 0.043589,
+  TK4: 0,
+};
+
+function calcularPomeM3(tanque: Tanque, nivelInicial: string, nivelFinal: string): number {
+  const factor = FACTOR_POME_M3_POR_CM[tanque] ?? 0;
+  if (!factor) return 0;
+  if (nivelInicial === "" || nivelFinal === "") return 0;
+  const ni = Number(nivelInicial);
+  const nf = Number(nivelFinal);
+  if (!isFinite(ni) || !isFinite(nf)) return 0;
+  const diff = nf - ni;
+  if (diff <= 0) return 0;
+  return Math.round(diff * factor * 100) / 100;
+}
+
 function todayISO() {
   // Colombia UTC-5; tomamos la fecha local del navegador sin transformaciones
   const d = new Date();
