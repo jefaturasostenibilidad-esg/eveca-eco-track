@@ -75,6 +75,9 @@ function Dashboard() {
     const pomeMes = efluentes
       .filter((e) => e.fecha.startsWith(mes))
       .reduce((s, e) => s + (e.cantidad_pome_m3 ?? 0), 0);
+    const aceiteMes = efluentes
+      .filter((e) => e.fecha.startsWith(mes))
+      .reduce((s, e) => s + (e.cantidad_aceite_recuperado_litros ?? 0), 0);
     const residuosMes = ambiental
       .filter((r) => r.fecha.startsWith(mes))
       .reduce((s, r) => s + (r.cantidad_residuo_kg ?? 0), 0);
@@ -83,7 +86,7 @@ function Dashboard() {
       .reduce((s, z) => s + (z.area_m2 ?? 0), 0);
     const reportesMes = reportes.filter((r) => r.fecha.startsWith(mes)).length;
     const contingencias = efluentes.filter((e) => e.uso_contingencia && e.fecha.startsWith(mes)).length;
-    return { pomeMes, residuosMes, areaMes, reportesMes, contingencias };
+    return { pomeMes, aceiteMes, residuosMes, areaMes, reportesMes, contingencias };
   }, [efluentes, ambiental, zonas, reportes, mes]);
 
   // Serie mensual POME (últimos 6 meses)
@@ -129,6 +132,7 @@ function Dashboard() {
 
   const kpiCards = [
     { icon: Droplets, label: "POME procesado (m³)", val: kpis.pomeMes.toFixed(1), color: "text-primary bg-primary/10" },
+    { icon: Droplets, label: "Aceite recuperado (L)", val: kpis.aceiteMes.toFixed(1), color: "text-amber-foreground bg-amber/20" },
     { icon: Leaf, label: "Residuos del mes (kg)", val: kpis.residuosMes.toFixed(1), color: "text-success bg-success/10" },
     { icon: TreePine, label: "Área intervenida (m²)", val: kpis.areaMes.toFixed(0), color: "text-amber-foreground bg-amber/20" },
     { icon: FileText, label: "Reportes del mes", val: String(kpis.reportesMes), color: "text-primary bg-secondary" },
