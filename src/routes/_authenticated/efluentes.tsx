@@ -57,6 +57,28 @@ const TANQUES_INFO: Record<Tanque, { label: string; sub: string; color: string }
   TK4: { label: "TK4", sub: "Abono Líquido / Contingencia", color: "bg-purple-500/15 text-purple-700 border-purple-300" },
 };
 
+// Factores de conversión volumétrica (m³ por cm de altura) según diámetro del biotanque ITM.
+// TK1 (Biotanque Grande Ø 17.13 m): 0.230438 m³/cm
+// TK3 (Biotanque Pequeño Ø 7.45 m): 0.043589 m³/cm
+const FACTOR_POME_M3_POR_CM: Record<Tanque, number> = {
+  TK1: 0.230438,
+  TK2: 0,
+  TK3: 0.043589,
+  TK4: 0,
+};
+
+function calcularPomeM3(tanque: Tanque, nivelInicial: string, nivelFinal: string): number {
+  const factor = FACTOR_POME_M3_POR_CM[tanque] ?? 0;
+  if (!factor) return 0;
+  if (nivelInicial === "" || nivelFinal === "") return 0;
+  const ni = Number(nivelInicial);
+  const nf = Number(nivelFinal);
+  if (!isFinite(ni) || !isFinite(nf)) return 0;
+  const diff = nf - ni;
+  if (diff <= 0) return 0;
+  return Math.round(diff * factor * 100) / 100;
+}
+
 function todayISO() {
   // Colombia UTC-5; tomamos la fecha local del navegador sin transformaciones
   const d = new Date();
@@ -111,6 +133,17 @@ function EfluentesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [filterTanque, setFilterTanque] = useState<"all" | Tanque>("all");
+
+  // Auto-cálculo de Cantidad POME (m³) en tiempo real (solo TK1/TK3).
+  useEffect(() => {
+    const isPomeTank = form.tanque === "TK1" || form.tanque === "TK3";
+    if (!isPomeTank) return;
+    const calc = calcularPomeM3(form.tanque, form.nivel_inicial_cm, form.nivel_final_cm);
+    const next = calc > 0 ? calc.toFixed(2) : "";
+    if (next !== form.cantidad_pome_m3) {
+      setForm((f) => ({ ...f, cantidad_pome_m3: next }));
+    }
+  }, [form.tanque, form.nivel_inicial_cm, form.nivel_final_cm, form.cantidad_pome_m3]);
 
   const fetchRegistros = async () => {
     let q = supabase.from("registros_efluentes").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false });
@@ -292,11 +325,27 @@ function EfluentesPage() {
                           onChange={(e) => setForm({ ...form, nivel_final_cm: e.target.value })} />
                       </div>
                       <div>
-                        <Label>Cantidad POME (m³) *</Label>
-                        <Input type="number" min={0} step="0.01" required value={form.cantidad_pome_m3}
-                          onChange={(e) => setForm({ ...form, cantidad_pome_m3: e.target.value })} />
+                        <Label>Cantidad POME (m³) — automático</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          readOnly
+                          tabIndex={-1}
+                          value={form.cantidad_pome_m3}
+                          className="bg-muted/50 cursor-not-allowed font-display font-semibold"
+                          placeholder="0.00"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Factor {form.tanque}: {FACTOR_POME_M3_POR_CM[form.tanque]} m³/cm
+                        </p>
                       </div>
                     </div>
+                    {form.nivel_inicial_cm !== "" && form.nivel_final_cm !== "" &&
+                      Number(form.nivel_final_cm) < Number(form.nivel_inicial_cm) && (
+                        <p className="text-xs text-amber-600 -mt-2">
+                          El nivel final debe ser mayor al inicial.
+                        </p>
+                      )}
                     <div className="flex items-center gap-3 p-3 rounded-md bg-card border border-border">
                       <Switch checked={form.enviado_biodigestor}
                         onCheckedChange={(v) => setForm({ ...form, enviado_biodigestor: v })} />
