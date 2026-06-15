@@ -398,7 +398,10 @@ export async function exportDashboardImage(_element: HTMLElement, kpis: Dashboar
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
+    document.getElementById("html2canvas-color-fix")?.remove();
     wrap.remove();
+  }
+}
   }
 }
 
