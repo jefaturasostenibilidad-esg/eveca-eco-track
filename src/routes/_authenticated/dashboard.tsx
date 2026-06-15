@@ -260,13 +260,13 @@ function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-display text-base">Aceite recuperado (L) — tendencia</CardTitle>
+            <CardTitle className="font-display text-base">Aceite recuperado (L) — últimos 30 días</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={serieEfluentes}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="dia" tick={{ fontSize: 11 }} interval={2} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Line type="monotone" dataKey="aceite" name="Aceite L" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
@@ -277,11 +277,11 @@ function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-display text-base">Residuos por categoría — mes</CardTitle>
+            <CardTitle className="font-display text-base">Residuos por categoría — hoy</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
             {residuosPorCat.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sin datos del mes</div>
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sin datos del día</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
