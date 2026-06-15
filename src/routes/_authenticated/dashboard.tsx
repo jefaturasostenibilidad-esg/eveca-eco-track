@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Droplets, Leaf, TreePine, FileText, Loader2, TrendingUp, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Droplets, Leaf, TreePine, FileText, Loader2, TrendingUp, AlertTriangle, FileSpreadsheet, Image as ImageIcon } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
+import { exportFullDatabaseExcel, exportDashboardImage } from "@/lib/exports";
+import { toast } from "sonner";
+import evecaLogo from "@/assets/eveca-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -138,20 +142,74 @@ function Dashboard() {
     { icon: FileText, label: "Reportes del mes", val: String(kpis.reportesMes), color: "text-primary bg-secondary" },
   ];
 
+  const dashRef = useRef<HTMLDivElement | null>(null);
+  const [exporting, setExporting] = useState<null | "xlsx" | "png">(null);
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting("xlsx");
+      await exportFullDatabaseExcel();
+      toast.success("Reporte Excel descargado");
+    } catch (e: any) {
+      toast.error("No se pudo exportar Excel", { description: e?.message });
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportImage = async () => {
+    if (!dashRef.current) return;
+    try {
+      setExporting("png");
+      await exportDashboardImage(dashRef.current);
+      toast.success("Imagen del dashboard descargada");
+    } catch (e: any) {
+      toast.error("No se pudo exportar imagen", { description: e?.message });
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-primary">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Tablero unificado · datos en tiempo real · mes en curso {mes}</p>
-        </div>
-        {kpis.contingencias > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-sm">
-            <AlertTriangle className="w-4 h-4" />
-            {kpis.contingencias} uso(s) de contingencia este mes
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <img src={evecaLogo.url} alt="EVECA" className="h-12 w-auto object-contain hidden sm:block" />
+          <div>
+            <h1 className="text-2xl font-display font-bold text-primary">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Tablero unificado · datos en tiempo real · mes en curso {mes}</p>
           </div>
-        )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {kpis.contingencias > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <AlertTriangle className="w-4 h-4" />
+              {kpis.contingencias} contingencia(s) este mes
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            disabled={exporting !== null}
+            className="gap-2"
+          >
+            {exporting === "xlsx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+            Exportar Excel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleExportImage}
+            disabled={exporting !== null}
+            className="gap-2"
+          >
+            {exporting === "png" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+            Dashboard
+          </Button>
+        </div>
       </div>
+
+      <div ref={dashRef} className="space-y-6">
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiCards.map((k) => (

@@ -220,8 +220,13 @@ export async function exportFullDatabaseExcel() {
 
   await addCoverSheet(wb, logoId, stats);
   // Move cover first
-  const cover = wb.getWorksheet("Portada");
-  if (cover) cover.orderNo = 0;
+  const sheets = wb.worksheets;
+  const coverIdx = sheets.findIndex((s) => s.name === "Portada");
+  if (coverIdx > 0) {
+    const [cover] = sheets.splice(coverIdx, 1);
+    sheets.unshift(cover);
+    sheets.forEach((s, i) => ((s as any).orderNo = i));
+  }
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
