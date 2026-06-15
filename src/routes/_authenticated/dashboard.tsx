@@ -40,6 +40,8 @@ function Dashboard() {
   const [ambiental, setAmbiental] = useState<Ambiental[]>([]);
   const [zonas, setZonas] = useState<Zonas[]>([]);
   const [reportes, setReportes] = useState<Reporte[]>([]);
+  const dashRef = useRef<HTMLDivElement | null>(null);
+  const [exporting, setExporting] = useState<null | "xlsx" | "png">(null);
 
   const load = async () => {
     setLoading(true);
@@ -142,8 +144,7 @@ function Dashboard() {
     { icon: FileText, label: "Reportes del mes", val: String(kpis.reportesMes), color: "text-primary bg-secondary" },
   ];
 
-  const dashRef = useRef<HTMLDivElement | null>(null);
-  const [exporting, setExporting] = useState<null | "xlsx" | "png">(null);
+
 
   const handleExportExcel = async () => {
     try {
