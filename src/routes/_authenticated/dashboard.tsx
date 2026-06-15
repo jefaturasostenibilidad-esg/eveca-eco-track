@@ -8,7 +8,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
-import { exportFullDatabaseExcel, exportDashboardImage } from "@/lib/exports";
+import { exportFullDatabaseExcel, exportDashboardImage, type DashboardKpi } from "@/lib/exports";
 import { toast } from "sonner";
 import evecaLogo from "@/assets/eveca-logo.png.asset.json";
 
@@ -167,10 +167,16 @@ function Dashboard() {
   };
 
   const handleExportImage = async () => {
-    if (!dashRef.current) return;
     try {
       setExporting("png");
-      await exportDashboardImage(dashRef.current);
+      const exportKpis: DashboardKpi[] = [
+        { label: "POME procesado hoy", value: kpis.pomeHoy.toFixed(1), unit: "m³", icon: "droplet", accent: "#2d6a4f" },
+        { label: "Aceite recuperado hoy", value: kpis.aceiteHoy.toFixed(1), unit: "L", icon: "droplet", accent: "#b45309" },
+        { label: "Residuos del día", value: kpis.residuosHoy.toFixed(1), unit: "kg", icon: "leaf", accent: "#059669" },
+        { label: "Área intervenida hoy", value: kpis.areaHoy.toFixed(0), unit: "m²", icon: "tree", accent: "#065f46" },
+        { label: "Reportes de hoy", value: String(kpis.reportesHoy), icon: "file-text", accent: "#1d4ed8" },
+      ];
+      await exportDashboardImage(dashRef.current ?? document.body, exportKpis);
       toast.success("Imagen del dashboard descargada");
     } catch (e: any) {
       toast.error("No se pudo exportar imagen", { description: e?.message });
@@ -213,7 +219,7 @@ function Dashboard() {
             className="gap-2"
           >
             {exporting === "png" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-            Dashboard
+            {exporting === "png" ? "Generando..." : "Dashboard"}
           </Button>
         </div>
       </div>
