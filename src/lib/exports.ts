@@ -402,6 +402,4 @@ export async function exportDashboardImage(_element: HTMLElement, kpis: Dashboar
     wrap.remove();
   }
 }
-  }
-}
 
