@@ -314,11 +314,27 @@ function EfluentesPage() {
                           onChange={(e) => setForm({ ...form, nivel_final_cm: e.target.value })} />
                       </div>
                       <div>
-                        <Label>Cantidad POME (m³) *</Label>
-                        <Input type="number" min={0} step="0.01" required value={form.cantidad_pome_m3}
-                          onChange={(e) => setForm({ ...form, cantidad_pome_m3: e.target.value })} />
+                        <Label>Cantidad POME (m³) — automático</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          readOnly
+                          tabIndex={-1}
+                          value={form.cantidad_pome_m3}
+                          className="bg-muted/50 cursor-not-allowed font-display font-semibold"
+                          placeholder="0.00"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Factor {form.tanque}: {FACTOR_POME_M3_POR_CM[form.tanque]} m³/cm
+                        </p>
                       </div>
                     </div>
+                    {form.nivel_inicial_cm !== "" && form.nivel_final_cm !== "" &&
+                      Number(form.nivel_final_cm) < Number(form.nivel_inicial_cm) && (
+                        <p className="text-xs text-amber-600 -mt-2">
+                          El nivel final debe ser mayor al inicial.
+                        </p>
+                      )}
                     <div className="flex items-center gap-3 p-3 rounded-md bg-card border border-border">
                       <Switch checked={form.enviado_biodigestor}
                         onCheckedChange={(v) => setForm({ ...form, enviado_biodigestor: v })} />
