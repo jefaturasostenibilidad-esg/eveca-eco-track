@@ -16,6 +16,7 @@ import { NotificationsBell } from "@/components/notifications-bell";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import evecaLogo from "@/assets/eveca-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -76,16 +77,15 @@ function AppShell() {
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <div className="px-4 py-5 border-b border-sidebar-border flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-amber/90 text-amber-foreground flex items-center justify-center shrink-0">
-            <Leaf className="w-5 h-5" />
-          </div>
+        <div className="px-4 py-4 border-b border-sidebar-border flex items-center gap-3 bg-white">
+          <img
+            src={evecaLogo.url}
+            alt="Eveca · Extracción Sostenible"
+            className="h-12 w-auto object-contain"
+          />
           <div className="min-w-0">
-            <div className="font-display font-bold text-base leading-tight truncate">
-              SostenibilidadPro
-            </div>
-            <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60 truncate">
-              EVECA · Jefatura
+            <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold truncate">
+              Sostenibilidad
             </div>
           </div>
         </div>
