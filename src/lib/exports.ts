@@ -328,6 +328,33 @@ export async function exportDashboardImage(_element: HTMLElement, kpis: Dashboar
 
   document.body.appendChild(wrap);
 
+  // FIX A: Override theme CSS vars (oklch/lab/lch/oklab) that html2canvas can't parse.
+  const styleOverride = document.createElement("style");
+  styleOverride.id = "html2canvas-color-fix";
+  styleOverride.textContent = `
+    * {
+      --background: #ffffff !important;
+      --foreground: #111827 !important;
+      --card: #ffffff !important;
+      --card-foreground: #111827 !important;
+      --primary: #2d6a4f !important;
+      --primary-foreground: #ffffff !important;
+      --muted: #f3f4f6 !important;
+      --muted-foreground: #6b7280 !important;
+      --border: #e5e7eb !important;
+      --ring: #2d6a4f !important;
+      --accent: #f0fdf4 !important;
+      --accent-foreground: #166534 !important;
+      --destructive: #ef4444 !important;
+      --destructive-foreground: #ffffff !important;
+      --secondary: #f3f4f6 !important;
+      --secondary-foreground: #111827 !important;
+      --popover: #ffffff !important;
+      --popover-foreground: #111827 !important;
+    }
+  `;
+  document.head.appendChild(styleOverride);
+
   try {
     await new Promise((r) => setTimeout(r, 600));
     const html2canvas = (await import("html2canvas")).default;
@@ -343,6 +370,20 @@ export async function exportDashboardImage(_element: HTMLElement, kpis: Dashboar
       scrollY: -window.scrollY,
       windowWidth: document.documentElement.scrollWidth,
       windowHeight: document.documentElement.scrollHeight,
+      onclone: (clonedDoc: Document) => {
+        const all = clonedDoc.querySelectorAll<HTMLElement>("*");
+        all.forEach((el) => {
+          const cs = clonedDoc.defaultView?.getComputedStyle(el);
+          if (!cs) return;
+          const bg = cs.backgroundColor;
+          const fg = cs.color;
+          const bc = cs.borderColor;
+          const re = /(oklch|oklab|lab|lch)\s*\(/i;
+          if (bg && re.test(bg)) el.style.backgroundColor = "#ffffff";
+          if (fg && re.test(fg)) el.style.color = "#111827";
+          if (bc && re.test(bc)) el.style.borderColor = "#e5e7eb";
+        });
+      },
     });
 
     const blob: Blob = await new Promise((resolve, reject) => {
@@ -357,6 +398,7 @@ export async function exportDashboardImage(_element: HTMLElement, kpis: Dashboar
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
+    document.getElementById("html2canvas-color-fix")?.remove();
     wrap.remove();
   }
 }
