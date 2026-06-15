@@ -144,8 +144,7 @@ function Dashboard() {
     { icon: FileText, label: "Reportes del mes", val: String(kpis.reportesMes), color: "text-primary bg-secondary" },
   ];
 
-  const dashRef = useRef<HTMLDivElement | null>(null);
-  const [exporting, setExporting] = useState<null | "xlsx" | "png">(null);
+
 
   const handleExportExcel = async () => {
     try {
