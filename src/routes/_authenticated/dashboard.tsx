@@ -8,7 +8,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
-import { exportFullDatabaseExcel, exportDashboardImage } from "@/lib/exports";
+import { exportFullDatabaseExcel, exportDashboardImage, type DashboardKpi } from "@/lib/exports";
 import { toast } from "sonner";
 import evecaLogo from "@/assets/eveca-logo.png.asset.json";
 
