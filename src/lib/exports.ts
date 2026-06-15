@@ -247,64 +247,115 @@ export async function exportFullDatabaseExcel() {
   URL.revokeObjectURL(url);
 }
 
-export async function exportDashboardImage(element: HTMLElement) {
-  // Build a wrapper with branded header + footer around a clone of the dashboard
+export interface DashboardKpi {
+  label: string;
+  value: string;
+  unit?: string;
+  icon: "droplet" | "leaf" | "tree" | "file-text";
+  accent: string;
+}
+
+const ICON_SVG: Record<DashboardKpi["icon"], string> = {
+  droplet: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+  leaf: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.2 2.96c1.4 9.3-1.85 15.85-8.2 17.04"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>`,
+  tree: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M9.5 8a2.5 2.5 0 0 1-1.96-4.06 2.5 2.5 0 0 1 2.06-3.94 2.5 2.5 0 0 1 4.8 0 2.5 2.5 0 0 1 2.06 3.94A2.5 2.5 0 0 1 14.5 8Z"/><path d="M12 15c-2 0-3-2-3-4"/><path d="M12 15c2 0 3-2 3-4"/></svg>`,
+  "file-text": `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+};
+
+function formatDateEs(d: Date) {
+  const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  return `${dias[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+function formatTimeEs(d: Date) {
+  let h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h >= 12 ? "p.m." : "a.m.";
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+export async function exportDashboardImage(_element: HTMLElement, kpis: DashboardKpi[] = []) {
   const now = new Date();
+
+  const cardsHtml = kpis.map((k) => `
+    <div style="background:#ffffff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:2px solid ${k.accent};padding:18px 20px;">
+      <div style="display:flex;align-items:center;gap:6px;color:#6b7280;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;">
+        <span style="color:${k.accent};display:inline-flex;">${ICON_SVG[k.icon]}</span>
+        <span>${k.label}</span>
+      </div>
+      <div style="margin-top:8px;display:flex;align-items:baseline;gap:6px;">
+        <div style="color:#111827;font-weight:700;font-size:28px;line-height:1;">${k.value}</div>
+        ${k.unit ? `<div style="color:#6b7280;font-size:12px;">${k.unit}</div>` : ""}
+      </div>
+    </div>
+  `).join("");
+
   const wrap = document.createElement("div");
-  wrap.style.position = "fixed";
-  wrap.style.left = "-99999px";
+  wrap.style.position = "absolute";
+  wrap.style.left = "-9999px";
   wrap.style.top = "0";
-  wrap.style.width = `${Math.max(element.scrollWidth, 1280)}px`;
-  wrap.style.background = "#f7faf6";
-  wrap.style.padding = "32px";
-  wrap.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  wrap.style.width = "900px";
+  wrap.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', Inter, Roboto, sans-serif";
+  wrap.style.background = "#ffffff";
 
   wrap.innerHTML = `
-    <div style="background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.06);overflow:hidden;border:1px solid #e7ece4;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;background:linear-gradient(90deg,#1f5a3d 0%,#2d7a52 100%);color:#fff;">
-        <div style="display:flex;align-items:center;gap:16px;">
-          <div style="background:#fff;border-radius:10px;padding:6px 10px;">
-            <img src="${evecaLogo.url}" alt="EVECA" style="height:48px;display:block;" crossorigin="anonymous" />
-          </div>
-          <div>
-            <div style="font-size:20px;font-weight:700;letter-spacing:.3px;">EVECA · Extracción Sostenible</div>
-            <div style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:1.5px;">Tablero de Indicadores de Sostenibilidad</div>
-          </div>
-        </div>
-        <div style="text-align:right;font-size:12px;opacity:.95;">
-          <div style="font-weight:600;">Descargado</div>
-          <div>${fmtDateTime(now)}</div>
-        </div>
+    <div style="background:linear-gradient(135deg,#1a4731 0%,#2d6a4f 100%);padding:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <div style="background:#ffffff;border-radius:8px;padding:8px 12px;">
+        <img src="${evecaLogo.url}" alt="EVECA" crossorigin="anonymous" style="height:48px;display:block;" />
       </div>
-      <div id="__dash-clone" style="padding:24px;background:#f7faf6;"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:#1f5a3d;color:#fff;font-size:11px;letter-spacing:.5px;">
-        <div>Documento generado automáticamente · Uso interno</div>
-        <div>© ${now.getFullYear()} EVECA · Confidencial</div>
+      <div style="flex:1;text-align:center;color:#ffffff;">
+        <div style="font-size:22px;font-weight:700;letter-spacing:.3px;">TABLERO DE SOSTENIBILIDAD</div>
+        <div style="font-size:13px;color:#a8d5b5;margin-top:4px;">EVECA S.A.S. · Extracción Sostenible</div>
       </div>
+      <div style="background:#0f2d1e;border-radius:8px;padding:10px 14px;text-align:right;min-width:200px;">
+        <div style="color:#6fcf97;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">CORTE</div>
+        <div style="color:#ffffff;font-size:13px;font-weight:700;margin-top:2px;">${formatDateEs(now)}</div>
+        <div style="color:#a8d5b5;font-size:11px;margin-top:2px;">Hora: ${formatTimeEs(now)}</div>
+      </div>
+    </div>
+    <div style="background:#ffffff;padding:24px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        ${cardsHtml}
+      </div>
+    </div>
+    <div style="background:#f0fdf4;border-top:1px solid #d1fae5;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="color:#374151;font-size:10px;">Generado automáticamente por SostenibilidadPro · EVECA S.A.S.</div>
+      <div style="color:#9ca3af;font-size:10px;font-style:italic;">CONFIDENCIAL — Solo para uso interno</div>
     </div>
   `;
 
-  const clone = element.cloneNode(true) as HTMLElement;
-  wrap.querySelector("#__dash-clone")!.appendChild(clone);
   document.body.appendChild(wrap);
 
-  // Allow recharts SVGs and the logo image to render before capture
-  await new Promise((r) => setTimeout(r, 400));
-
   try {
-    const { toPng } = await import("html-to-image");
-    const dataUrl = await toPng(wrap, {
-      backgroundColor: "#f7faf6",
-      pixelRatio: 2,
-      cacheBust: true,
-      skipFonts: true,
+    await new Promise((r) => setTimeout(r, 600));
+    const html2canvas = (await import("html2canvas")).default;
+    const canvas = await html2canvas(wrap, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      logging: false,
+      imageTimeout: 15000,
+      removeContainer: true,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight,
     });
+
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+    });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = dataUrl;
+    a.href = url;
     a.download = `EVECA_Dashboard_${fmtFileStamp(now)}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
     wrap.remove();
   }
