@@ -219,7 +219,7 @@ function Dashboard() {
             className="gap-2"
           >
             {exporting === "png" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-            Dashboard
+            {exporting === "png" ? "Generando..." : "Dashboard"}
           </Button>
         </div>
       </div>
