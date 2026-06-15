@@ -26,7 +26,7 @@ async function fetchLogoBuffer(): Promise<ArrayBuffer> {
   return await res.arrayBuffer();
 }
 
-function styleSheet(ws: ExcelJS.Worksheet, headers: string[], logoId: number) {
+function styleSheet(ws: AnyWorksheet, headers: string[], logoId: number) {
   ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 110, height: 60 } });
   ws.getRow(1).height = 50;
   ws.mergeCells(1, 1, 1, Math.max(headers.length, 4));
@@ -64,7 +64,7 @@ function styleSheet(ws: ExcelJS.Worksheet, headers: string[], logoId: number) {
   ws.views = [{ state: "frozen", ySplit: 5 }];
 }
 
-function applyDataStyles(ws: ExcelJS.Worksheet, startRow: number, endRow: number, cols: number) {
+function applyDataStyles(ws: AnyWorksheet, startRow: number, endRow: number, cols: number) {
   for (let r = startRow; r <= endRow; r++) {
     const row = ws.getRow(r);
     const zebra = (r - startRow) % 2 === 1;
@@ -84,7 +84,7 @@ function applyDataStyles(ws: ExcelJS.Worksheet, startRow: number, endRow: number
   }
 }
 
-function autoWidth(ws: ExcelJS.Worksheet, headers: string[], rows: any[][]) {
+function autoWidth(ws: AnyWorksheet, headers: string[], rows: any[][]) {
   headers.forEach((h, i) => {
     let max = h.length;
     rows.forEach((r) => {
@@ -97,7 +97,7 @@ function autoWidth(ws: ExcelJS.Worksheet, headers: string[], rows: any[][]) {
 }
 
 async function addTableSheet(
-  wb: ExcelJS.Workbook,
+  wb: AnyWorkbook,
   name: string,
   headers: string[],
   rows: any[][],
@@ -126,7 +126,7 @@ async function addTableSheet(
   applyDataStyles(ws, 6, 6 + rows.length - 1, headers.length);
 }
 
-async function addCoverSheet(wb: ExcelJS.Workbook, logoId: number, stats: { table: string; count: number }[]) {
+async function addCoverSheet(wb: AnyWorkbook, logoId: number, stats: { table: string; count: number }[]) {
   const ws = wb.addWorksheet("Portada", { properties: { tabColor: { argb: BRAND_AMBER } } });
   ws.addImage(logoId, { tl: { col: 1, row: 1 }, ext: { width: 220, height: 120 } });
   ws.getColumn(1).width = 4;
@@ -166,7 +166,7 @@ async function addCoverSheet(wb: ExcelJS.Workbook, logoId: number, stats: { tabl
     b.value = `${st.count} registros`;
     b.font = { name: "Calibri", size: 11, bold: true, color: { argb: BRAND_GREEN } };
     b.alignment = { horizontal: "right" };
-    const fill: ExcelJS.Fill = {
+    const fill: AnyFill = {
       type: "pattern",
       pattern: "solid",
       fgColor: { argb: i % 2 === 0 ? SOFT_GREEN : "FFFFFFFF" },
