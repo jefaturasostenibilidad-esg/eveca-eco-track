@@ -1,5 +1,5 @@
-import ExcelJS from "exceljs";
-import html2canvas from "html2canvas";
+import type ExcelJSType from "exceljs";
+type ExcelJS = typeof ExcelJSType;
 import { supabase } from "@/integrations/supabase/client";
 import evecaLogo from "@/assets/eveca-logo.png.asset.json";
 
