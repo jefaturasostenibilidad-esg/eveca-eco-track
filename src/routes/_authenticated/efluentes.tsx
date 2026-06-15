@@ -134,6 +134,17 @@ function EfluentesPage() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [filterTanque, setFilterTanque] = useState<"all" | Tanque>("all");
 
+  // Auto-cálculo de Cantidad POME (m³) en tiempo real (solo TK1/TK3).
+  useEffect(() => {
+    const isPomeTank = form.tanque === "TK1" || form.tanque === "TK3";
+    if (!isPomeTank) return;
+    const calc = calcularPomeM3(form.tanque, form.nivel_inicial_cm, form.nivel_final_cm);
+    const next = calc > 0 ? calc.toFixed(2) : "";
+    if (next !== form.cantidad_pome_m3) {
+      setForm((f) => ({ ...f, cantidad_pome_m3: next }));
+    }
+  }, [form.tanque, form.nivel_inicial_cm, form.nivel_final_cm, form.cantidad_pome_m3]);
+
   const fetchRegistros = async () => {
     let q = supabase.from("registros_efluentes").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false });
     if (filterTanque !== "all") q = q.eq("tanque", filterTanque);
