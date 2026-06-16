@@ -191,8 +191,8 @@ function EfluentesPage() {
       hora: r.hora.slice(0, 5),
       tanque: r.tanque,
       cantidad_pome_m3: r.cantidad_pome_m3?.toString() ?? "",
-      nivel_inicial_cm: r.nivel_inicial_cm?.toString() ?? "",
-      nivel_final_cm: r.nivel_final_cm?.toString() ?? "",
+      nivel_liquido_cm: (r.nivel_liquido_cm ?? r.nivel_final_cm)?.toString() ?? "",
+
       enviado_biodigestor: r.enviado_biodigestor,
       biodigestor_destino: r.biodigestor_destino ?? "",
       cantidad_pome_biodigestor_m3: r.cantidad_pome_biodigestor_m3?.toString() ?? "",
