@@ -108,6 +108,9 @@ interface FormState {
   cantidad_aceite_recuperado_litros: string;
   uso_contingencia: boolean;
   observaciones: string;
+  ph: string;
+  temperatura_c: string;
+  volumetria_ml: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -123,6 +126,9 @@ const emptyForm = (): FormState => ({
   cantidad_aceite_recuperado_litros: "",
   uso_contingencia: true,
   observaciones: "",
+  ph: "",
+  temperatura_c: "",
+  volumetria_ml: "",
 });
 
 function EfluentesPage() {
