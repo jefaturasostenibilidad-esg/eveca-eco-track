@@ -40,6 +40,9 @@ interface Registro {
   cantidad_pome_m3: number | null;
   nivel_inicial_cm: number | null;
   nivel_final_cm: number | null;
+  nivel_liquido_cm: number | null;
+  diametro_m: number | null;
+  radio_m: number | null;
   enviado_biodigestor: boolean;
   biodigestor_destino: Biodigestor | null;
   cantidad_pome_biodigestor_m3: number | null;
@@ -60,27 +63,27 @@ const TANQUES_INFO: Record<Tanque, { label: string; sub: string; color: string }
   TK4: { label: "TK4", sub: "Abono Líquido / Contingencia", color: "bg-purple-500/15 text-purple-700 border-purple-300" },
 };
 
-// Factores de conversión volumétrica (m³ por cm de altura) según diámetro del biotanque ITM.
-// TK1 (Biotanque Grande Ø 17.13 m): 0.230438 m³/cm
-// TK3 (Biotanque Pequeño Ø 7.45 m): 0.043589 m³/cm
-const FACTOR_POME_M3_POR_CM: Record<Tanque, number> = {
-  TK1: 0.230438,
+// Diámetro fijo por tanque (m). Solo TK1 y TK3 calculan volumen por geometría.
+const DIAMETRO_TANQUE_M: Record<Tanque, number> = {
+  TK1: 17.13,
   TK2: 0,
-  TK3: 0.043589,
+  TK3: 17.13,
   TK4: 0,
 };
 
-function calcularPomeM3(tanque: Tanque, nivelInicial: string, nivelFinal: string): number {
-  const factor = FACTOR_POME_M3_POR_CM[tanque] ?? 0;
-  if (!factor) return 0;
-  if (nivelInicial === "" || nivelFinal === "") return 0;
-  const ni = Number(nivelInicial);
-  const nf = Number(nivelFinal);
-  if (!isFinite(ni) || !isFinite(nf)) return 0;
-  const diff = nf - ni;
-  if (diff <= 0) return 0;
-  return Math.round(diff * factor * 100) / 100;
+const ALTURA_MAX_CM = 227; // 2 anillos ≈ 2270 mm
+const ALTURA_LIMITE_CM = 300;
+
+function calcularVolumenM3(tanque: Tanque, nivelCm: string): number {
+  const diametro = DIAMETRO_TANQUE_M[tanque] ?? 0;
+  if (!diametro || nivelCm === "") return 0;
+  const h = Number(nivelCm);
+  if (!isFinite(h) || h <= 0) return 0;
+  const r = diametro / 2;
+  const v = Math.PI * r * r * (h / 100);
+  return Math.round(v * 10000) / 10000;
 }
+
 
 function todayISO() {
   // Colombia UTC-5; tomamos la fecha local del navegador sin transformaciones
