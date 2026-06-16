@@ -46,6 +46,9 @@ interface Registro {
   cantidad_aceite_recuperado_litros: number | null;
   uso_contingencia: boolean;
   observaciones: string | null;
+  ph: number | null;
+  temperatura_c: number | null;
+  volumetria_ml: number | null;
   operador_id: string | null;
   created_at: string;
 }
@@ -105,6 +108,9 @@ interface FormState {
   cantidad_aceite_recuperado_litros: string;
   uso_contingencia: boolean;
   observaciones: string;
+  ph: string;
+  temperatura_c: string;
+  volumetria_ml: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -120,6 +126,9 @@ const emptyForm = (): FormState => ({
   cantidad_aceite_recuperado_litros: "",
   uso_contingencia: true,
   observaciones: "",
+  ph: "",
+  temperatura_c: "",
+  volumetria_ml: "",
 });
 
 function EfluentesPage() {
@@ -187,6 +196,9 @@ function EfluentesPage() {
       cantidad_aceite_recuperado_litros: r.cantidad_aceite_recuperado_litros?.toString() ?? "",
       uso_contingencia: r.uso_contingencia,
       observaciones: r.observaciones ?? "",
+      ph: r.ph?.toString() ?? "",
+      temperatura_c: r.temperatura_c?.toString() ?? "",
+      volumetria_ml: r.volumetria_ml?.toString() ?? "",
     });
     setOpen(true);
   };
@@ -232,6 +244,9 @@ function EfluentesPage() {
       cantidad_aceite_recuperado_litros: form.tanque === "TK2" ? Number(form.cantidad_aceite_recuperado_litros) : null,
       uso_contingencia: form.tanque === "TK4" ? form.uso_contingencia : false,
       observaciones: form.observaciones.trim() || null,
+      ph: form.ph !== "" ? Number(form.ph) : null,
+      temperatura_c: form.temperatura_c !== "" ? Number(form.temperatura_c) : null,
+      volumetria_ml: form.volumetria_ml !== "" ? Number(form.volumetria_ml) : null,
       operador_id: user.id,
       updated_at: new Date().toISOString(),
     };
@@ -397,6 +412,33 @@ function EfluentesPage() {
                     </div>
                   </div>
                 )}
+
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Mediciones físico-químicas (opcional)
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label>pH</Label>
+                      <Input type="number" min={0} max={14} step="0.01" placeholder="0 - 14"
+                        value={form.ph}
+                        onChange={(e) => setForm({ ...form, ph: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Temperatura (°C)</Label>
+                      <Input type="number" step="0.1" placeholder="°C"
+                        value={form.temperatura_c}
+                        onChange={(e) => setForm({ ...form, temperatura_c: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Volumetría (mL)</Label>
+                      <Input type="number" min={0} step="0.01" placeholder="mL"
+                        value={form.volumetria_ml}
+                        onChange={(e) => setForm({ ...form, volumetria_ml: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+
 
                 <div>
                   <Label>Observaciones {form.tanque === "TK4" && "*"}</Label>
