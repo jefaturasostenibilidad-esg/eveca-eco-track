@@ -413,6 +413,33 @@ function EfluentesPage() {
                   </div>
                 )}
 
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Mediciones físico-químicas (opcional)
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label>pH</Label>
+                      <Input type="number" min={0} max={14} step="0.01" placeholder="0 - 14"
+                        value={form.ph}
+                        onChange={(e) => setForm({ ...form, ph: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Temperatura (°C)</Label>
+                      <Input type="number" step="0.1" placeholder="°C"
+                        value={form.temperatura_c}
+                        onChange={(e) => setForm({ ...form, temperatura_c: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Volumetría (mL)</Label>
+                      <Input type="number" min={0} step="0.01" placeholder="mL"
+                        value={form.volumetria_ml}
+                        onChange={(e) => setForm({ ...form, volumetria_ml: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+
+
                 <div>
                   <Label>Observaciones {form.tanque === "TK4" && "*"}</Label>
                   <Textarea rows={3} value={form.observaciones}
