@@ -54,9 +54,19 @@ CREATE TABLE IF NOT EXISTS registros_ambiental (
   area_intervenida_ha NUMERIC(10,2),
   observaciones TEXT,
   operador_id UUID REFERENCES profiles(id),
+  agua_suavizada_m3 NUMERIC(12,3),
+  agua_filtrada_m3 NUMERIC(12,3),
+  agua_ptai_m3 NUMERIC(12,3),
+  agua_vivero_m3 NUMERIC(12,3),
+  agua_total_m3 NUMERIC(12,3),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_registros_ambiental_water_date 
+ON registros_ambiental (fecha) 
+WHERE (categoria = 'agua_energia' AND subcategoria = 'Consumo de agua');
+
 
 CREATE TABLE IF NOT EXISTS registros_zonas_verdes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

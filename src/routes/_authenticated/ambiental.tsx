@@ -23,6 +23,10 @@ import {
 } from "@/components/ui/table";
 import { Leaf, Plus, Pencil, Trash2, Loader2, Upload, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend
+} from "recharts";
+
 
 export const Route = createFileRoute("/_authenticated/ambiental")({
   component: AmbientalPage,
@@ -38,7 +42,7 @@ const CATEGORIAS: { value: Categoria; label: string; sub: string[] }[] = [
   { value: "MIP", label: "Manejo Integrado de Plagas (MIP)", sub: ["Control biológico", "Control químico", "Roedores", "Insectos"] },
   { value: "biodiversidad", label: "Biodiversidad", sub: ["Avistamiento fauna", "Inventario flora", "Conservación"] },
   { value: "emisiones_carbono", label: "Emisiones / Huella de carbono", sub: ["Combustibles", "Energía eléctrica", "Calderas"] },
-  { value: "agua_energia", label: "Agua y energía", sub: ["Consumo agua m³", "Consumo energía kWh", "Reúso"] },
+  { value: "agua_energia", label: "Agua y energía", sub: ["Consumo de agua", "Consumo energía kWh", "Reúso"] },
   { value: "cumplimiento_legal", label: "Cumplimiento legal", sub: ["Permisos", "Vencimientos", "Auditorías"] },
   { value: "zonas_verdes", label: "Zonas verdes (registro ambiental)", sub: ["Inventario", "Conservación"] },
 ];
@@ -58,7 +62,13 @@ interface Registro {
   area_intervenida_ha: number | null;
   observaciones: string | null;
   created_at: string;
+  agua_suavizada_m3?: number | null;
+  agua_filtrada_m3?: number | null;
+  agua_ptai_m3?: number | null;
+  agua_vivero_m3?: number | null;
+  agua_total_m3?: number | null;
 }
+
 
 const TIPOS_RESIDUO = ["aprovechable", "peligroso", "ordinario", "organico"];
 const TIPOS_CONTROL = ["biologico", "quimico", "roedores", "insectos", "ninguno"];
@@ -81,6 +91,10 @@ interface FormState {
   area_intervenida_ha: string;
   observaciones: string;
   evidencia_url: string;
+  agua_suavizada_m3: string;
+  agua_filtrada_m3: string;
+  agua_ptai_m3: string;
+  agua_vivero_m3: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -96,7 +110,12 @@ const emptyForm = (): FormState => ({
   area_intervenida_ha: "",
   observaciones: "",
   evidencia_url: "",
+  agua_suavizada_m3: "",
+  agua_filtrada_m3: "",
+  agua_ptai_m3: "",
+  agua_vivero_m3: "",
 });
+
 
 function AmbientalPage() {
   const { profile } = useAuth();
@@ -104,12 +123,15 @@ function AmbientalPage() {
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [filterSub, setFilterSub] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Registro | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toDelete, setToDelete] = useState<Registro | null>(null);
+  const [selectedWaterRecord, setSelectedWaterRecord] = useState<Registro | null>(null);
+
 
   const load = async () => {
     setLoading(true);
@@ -148,9 +170,14 @@ function AmbientalPage() {
       area_intervenida_ha: r.area_intervenida_ha?.toString() ?? "",
       observaciones: r.observaciones ?? "",
       evidencia_url: r.evidencia_url ?? "",
+      agua_suavizada_m3: r.agua_suavizada_m3?.toString() ?? "",
+      agua_filtrada_m3: r.agua_filtrada_m3?.toString() ?? "",
+      agua_ptai_m3: r.agua_ptai_m3?.toString() ?? "",
+      agua_vivero_m3: r.agua_vivero_m3?.toString() ?? "",
     });
     setOpen(true);
   };
+
 
   const handleFile = async (file: File) => {
     setUploading(true);
@@ -169,13 +196,21 @@ function AmbientalPage() {
       toast.error("Subcategoría y descripción son obligatorias"); return;
     }
     setSubmitting(true);
+    
+    const isWater = form.categoria === "agua_energia" && form.subcategoria === "Consumo de agua";
+    const suavizada = isWater ? (form.agua_suavizada_m3 ? Number(form.agua_suavizada_m3) : 0) : null;
+    const filtrada = isWater ? (form.agua_filtrada_m3 ? Number(form.agua_filtrada_m3) : 0) : null;
+    const ptai = isWater ? (form.agua_ptai_m3 ? Number(form.agua_ptai_m3) : 0) : null;
+    const vivero = isWater ? (form.agua_vivero_m3 ? Number(form.agua_vivero_m3) : 0) : null;
+    const totalWater = isWater ? (suavizada || 0) + (filtrada || 0) + (ptai || 0) + (vivero || 0) : null;
+
     const payload = {
       fecha: form.fecha,
       categoria: form.categoria,
       subcategoria: form.subcategoria,
       descripcion: form.descripcion,
-      valor_medicion: form.valor_medicion ? Number(form.valor_medicion) : null,
-      unidad_medicion: form.unidad_medicion || null,
+      valor_medicion: isWater ? totalWater : (form.valor_medicion ? Number(form.valor_medicion) : null),
+      unidad_medicion: isWater ? "m³" : (form.unidad_medicion || null),
       tipo_residuo: form.categoria === "residuos_solidos" ? (form.tipo_residuo || null) : null,
       cantidad_residuo_kg: form.categoria === "residuos_solidos" && form.cantidad_residuo_kg ? Number(form.cantidad_residuo_kg) : null,
       tipo_control: form.categoria === "MIP" ? (form.tipo_control || null) : null,
@@ -183,16 +218,39 @@ function AmbientalPage() {
       evidencia_url: form.evidencia_url || null,
       observaciones: form.observaciones || null,
       operador_id: profile?.id,
+      agua_suavizada_m3: suavizada,
+      agua_filtrada_m3: filtrada,
+      agua_ptai_m3: ptai,
+      agua_vivero_m3: vivero,
+      agua_total_m3: totalWater,
     };
-    const { error } = editing
-      ? await supabase.from("registros_ambiental").update(payload).eq("id", editing.id)
+
+    let targetId = editing?.id;
+
+    if (!targetId && isWater) {
+      const { data: existing } = await supabase
+        .from("registros_ambiental")
+        .select("id")
+        .eq("fecha", form.fecha)
+        .eq("categoria", "agua_energia")
+        .eq("subcategoria", "Consumo de agua")
+        .maybeSingle();
+      if (existing) {
+        targetId = existing.id;
+      }
+    }
+
+    const { error } = targetId
+      ? await supabase.from("registros_ambiental").update(payload).eq("id", targetId)
       : await supabase.from("registros_ambiental").insert(payload);
+
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(editing ? "Registro actualizado" : "Registro creado");
+    toast.success(targetId && !editing?.id ? "Registro diario de agua actualizado (upsert)" : editing ? "Registro actualizado" : "Registro creado");
     setOpen(false);
     load();
   };
+
 
   const remove = async () => {
     if (!toDelete) return;
@@ -203,9 +261,21 @@ function AmbientalPage() {
     load();
   };
 
-  const filtered = filterCat === "all" ? registros : registros.filter((r) => r.categoria === filterCat);
+  const filtered = registros.filter((r) => {
+    if (filterCat !== "all" && r.categoria !== filterCat) return false;
+    if (filterCat === "agua_energia") {
+      if (filterSub === "water") {
+        return r.subcategoria === "Consumo de agua";
+      }
+      if (filterSub === "energy") {
+        return r.subcategoria === "Consumo energía kWh";
+      }
+    }
+    return true;
+  });
   const catLabel = (c: string) => CATEGORIAS.find((x) => x.value === c)?.label ?? c;
   const currentSub = CATEGORIAS.find((c) => c.value === form.categoria)?.sub ?? [];
+
 
   return (
     <div className="space-y-6">
@@ -228,16 +298,47 @@ function AmbientalPage() {
           <CardTitle className="font-display text-base">Registros recientes</CardTitle>
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground">Categoría</Label>
-            <Select value={filterCat} onValueChange={setFilterCat}>
+            <Select value={filterCat} onValueChange={(v) => { setFilterCat(v); setFilterSub("all"); }}>
               <SelectTrigger className="w-[230px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 {CATEGORIAS.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
+
           </div>
         </CardHeader>
+        {filterCat === "agua_energia" && (
+          <div className="flex items-center gap-2 mb-4 px-6 flex-wrap animate-in fade-in slide-in-from-top-1 duration-200">
+            <span className="text-xs font-medium text-muted-foreground mr-1">Filtrar por consumo:</span>
+            <Button
+              size="sm"
+              variant={filterSub === "all" ? "default" : "outline"}
+              className={filterSub === "all" ? "bg-primary hover:bg-primary-dark" : "text-foreground"}
+              onClick={() => setFilterSub("all")}
+            >
+              Todas
+            </Button>
+            <Button
+              size="sm"
+              variant={filterSub === "water" ? "default" : "outline"}
+              className={filterSub === "water" ? "bg-primary hover:bg-primary-dark" : "text-foreground"}
+              onClick={() => setFilterSub("water")}
+            >
+              Consumo de agua
+            </Button>
+            <Button
+              size="sm"
+              variant={filterSub === "energy" ? "default" : "outline"}
+              className={filterSub === "energy" ? "bg-primary hover:bg-primary-dark" : "text-foreground"}
+              onClick={() => setFilterSub("energy")}
+            >
+              Consumo de energía
+            </Button>
+          </div>
+        )}
         <CardContent>
+
           {loading ? (
             <div className="py-12 text-center text-muted-foreground"><Loader2 className="w-5 h-5 inline animate-spin mr-2" />Cargando…</div>
           ) : filtered.length === 0 ? (
@@ -258,8 +359,20 @@ function AmbientalPage() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((r) => (
-                    <TableRow key={r.id}>
+                    <TableRow 
+                      key={r.id}
+                      className={r.subcategoria === "Consumo de agua" ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("a")) {
+                          return;
+                        }
+                        if (r.subcategoria === "Consumo de agua") {
+                          setSelectedWaterRecord(r);
+                        }
+                      }}
+                    >
                       <TableCell className="font-mono text-xs">{r.fecha}</TableCell>
+
                       <TableCell><Badge variant="secondary" className="text-[10px]">{catLabel(r.categoria)}</Badge></TableCell>
                       <TableCell className="text-sm">{r.subcategoria}</TableCell>
                       <TableCell className="text-sm max-w-[280px] truncate">{r.descripcion}</TableCell>
@@ -352,18 +465,74 @@ function AmbientalPage() {
               </div>
             )}
 
-            {!["residuos_solidos"].includes(form.categoria) && (
+            {form.categoria === "agua_energia" && form.subcategoria === "Consumo de agua" ? (
               <>
                 <div>
-                  <Label>Valor de medición</Label>
-                  <Input type="number" step="0.001" value={form.valor_medicion} onChange={(e) => setForm({ ...form, valor_medicion: e.target.value })} />
+                  <Label>Agua suavizada (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.agua_suavizada_m3}
+                    onChange={(e) => setForm({ ...form, agua_suavizada_m3: e.target.value })}
+                  />
                 </div>
                 <div>
-                  <Label>Unidad</Label>
-                  <Input placeholder="kWh, m³, kg CO₂…" value={form.unidad_medicion} onChange={(e) => setForm({ ...form, unidad_medicion: e.target.value })} />
+                  <Label>Agua filtrada (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.agua_filtrada_m3}
+                    onChange={(e) => setForm({ ...form, agua_filtrada_m3: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Agua PTAI (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.agua_ptai_m3}
+                    onChange={(e) => setForm({ ...form, agua_ptai_m3: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Agua Vivero (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.agua_vivero_m3}
+                    onChange={(e) => setForm({ ...form, agua_vivero_m3: e.target.value })}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Consumo total de agua (m³)</Label>
+                  <Input
+                    type="number"
+                    readOnly
+                    value={
+                      (Number(form.agua_suavizada_m3) || 0) +
+                      (Number(form.agua_filtrada_m3) || 0) +
+                      (Number(form.agua_ptai_m3) || 0) +
+                      (Number(form.agua_vivero_m3) || 0)
+                    }
+                    className="bg-muted font-bold"
+                  />
                 </div>
               </>
+            ) : (
+              !["residuos_solidos"].includes(form.categoria) && (
+                <>
+                  <div>
+                    <Label>Valor de medición</Label>
+                    <Input type="number" step="0.001" value={form.valor_medicion} onChange={(e) => setForm({ ...form, valor_medicion: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Unidad</Label>
+                    <Input placeholder="kWh, m³, kg CO₂…" value={form.unidad_medicion} onChange={(e) => setForm({ ...form, unidad_medicion: e.target.value })} />
+                  </div>
+                </>
+              )
             )}
+
 
             <div className="md:col-span-2">
               <Label>Evidencia (imagen / PDF)</Label>
@@ -405,6 +574,150 @@ function AmbientalPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detail Modal for Water Consumption */}
+      <Dialog open={!!selectedWaterRecord} onOpenChange={(o) => !o && setSelectedWaterRecord(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold font-display text-primary">
+              <Leaf className="w-6 h-6 text-primary" /> Consumo de agua diario
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedWaterRecord && (() => {
+            const s = selectedWaterRecord.agua_suavizada_m3 ?? 0;
+            const f = selectedWaterRecord.agua_filtrada_m3 ?? 0;
+            const p = selectedWaterRecord.agua_ptai_m3 ?? 0;
+            const v = selectedWaterRecord.agua_vivero_m3 ?? 0;
+            const total = selectedWaterRecord.agua_total_m3 ?? selectedWaterRecord.valor_medicion ?? (s + f + p + v);
+
+            const data = [
+              { name: "Agua suavizada", value: s },
+              { name: "Agua filtrada", value: f },
+              { name: "Agua PTAI", value: p },
+              { name: "Agua Vivero", value: v },
+            ].filter((item) => item.value > 0);
+
+            const COLORS = ["#1B5E20", "#2E7D32", "#4CAF50", "#81C784"];
+
+            const handleEditFromDetail = () => {
+              if (selectedWaterRecord) {
+                const record = selectedWaterRecord;
+                setSelectedWaterRecord(null);
+                openEdit(record);
+              }
+            };
+
+            return (
+              <div className="space-y-6 py-2">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-primary/10 border border-primary/20 rounded-xl">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Fecha del registro</p>
+                    <p className="text-lg font-bold font-mono text-primary mt-0.5">{selectedWaterRecord.fecha}</p>
+                  </div>
+                  <div className="text-right md:text-right">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Consumo Total</p>
+                    <p className="text-2xl font-bold text-primary mt-0.5 font-mono">{total} m³</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  <div className="flex flex-col items-center justify-center bg-card border border-border p-4 rounded-xl h-[240px]">
+                    <p className="text-sm font-semibold text-foreground mb-2">Distribución por Fuente</p>
+                    {data.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={180}>
+                        <PieChart>
+                          <Pie
+                            data={data}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={3}
+                            dataKey="value"
+                          >
+                            {data.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => `${value} m³`} />
+                          <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        Sin datos individuales de consumo
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-secondary/30 rounded-xl border border-border flex flex-col justify-between h-[90px]">
+                      <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                        💧 Agua suavizada
+                      </span>
+                      <span className="text-xl font-bold font-mono text-primary mt-1">
+                        {s} m³
+                      </span>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-xl border border-border flex flex-col justify-between h-[90px]">
+                      <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                        💧 Agua filtrada
+                      </span>
+                      <span className="text-xl font-bold font-mono text-primary mt-1">
+                        {f} m³
+                      </span>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-xl border border-border flex flex-col justify-between h-[90px]">
+                      <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                        💧 Agua PTAI
+                      </span>
+                      <span className="text-xl font-bold font-mono text-primary mt-1">
+                        {p} m³
+                      </span>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-xl border border-border flex flex-col justify-between h-[90px]">
+                      <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                        💧 Agua Vivero
+                      </span>
+                      <span className="text-xl font-bold font-mono text-primary mt-1">
+                        {v} m³
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedWaterRecord.descripcion && (
+                  <div className="bg-card border border-border p-4 rounded-xl">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Descripción / Observaciones</p>
+                    <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">{selectedWaterRecord.descripcion}</p>
+                    {selectedWaterRecord.observaciones && (
+                      <p className="text-sm text-muted-foreground mt-2 italic">Nota: {selectedWaterRecord.observaciones}</p>
+                    )}
+                  </div>
+                )}
+
+                <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2 pt-2">
+                  <div className="text-xs text-muted-foreground font-mono">
+                    Total: <span className="font-bold text-foreground">{total} m³</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setSelectedWaterRecord(null)}>
+                      Cerrar
+                    </Button>
+                    {canWrite && (
+                      <Button onClick={handleEditFromDetail} className="bg-primary hover:bg-primary-dark">
+                        <Pencil className="w-4 h-4 mr-2" /> Editar registro
+                      </Button>
+                    )}
+                  </div>
+                </DialogFooter>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
