@@ -103,8 +103,7 @@ interface FormState {
   hora: string;
   tanque: Tanque;
   cantidad_pome_m3: string;
-  nivel_inicial_cm: string;
-  nivel_final_cm: string;
+  nivel_liquido_cm: string;
   enviado_biodigestor: boolean;
   biodigestor_destino: Biodigestor | "";
   cantidad_pome_biodigestor_m3: string;
@@ -121,8 +120,7 @@ const emptyForm = (): FormState => ({
   hora: nowHM(),
   tanque: "TK1",
   cantidad_pome_m3: "",
-  nivel_inicial_cm: "",
-  nivel_final_cm: "",
+  nivel_liquido_cm: "",
   enviado_biodigestor: false,
   biodigestor_destino: "",
   cantidad_pome_biodigestor_m3: "",
@@ -133,6 +131,7 @@ const emptyForm = (): FormState => ({
   temperatura_c: "",
   volumetria_ml: "",
 });
+
 
 function EfluentesPage() {
   const { profile, user } = useAuth();
