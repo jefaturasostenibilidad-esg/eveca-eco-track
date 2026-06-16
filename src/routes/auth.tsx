@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Leaf, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import palmaLogo from "@/assets/palma-fruit.png.asset.json";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -87,8 +88,12 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-amber/10 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4 shadow-lg">
-            <Leaf className="w-8 h-8" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white mb-4 shadow-lg ring-1 ring-border/50 overflow-hidden">
+            <img
+              src={palmaLogo.url}
+              alt="Fruto de palma africana"
+              className="w-full h-full object-contain p-2"
+            />
           </div>
           <h1 className="text-3xl font-display font-bold text-primary">SostenibilidadPro</h1>
           <p className="text-sm text-muted-foreground mt-1">EVECA · Jefatura de Sostenibilidad</p>
