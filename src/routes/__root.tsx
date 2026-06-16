@@ -73,8 +73,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SostenibilidadPro EVECA" },
+      { title: "Jefatura de Sostenibilidad" },
       { name: "description", content: "Sistema de gestión de sostenibilidad — Extractora Verde del Casanare S.A.S." },
+      { property: "og:title", content: "Jefatura de Sostenibilidad" },
+      { name: "twitter:title", content: "Jefatura de Sostenibilidad" },
+      { property: "og:description", content: "Sistema de gestión de sostenibilidad — Extractora Verde del Casanare S.A.S." },
+      { name: "twitter:description", content: "Sistema de gestión de sostenibilidad — Extractora Verde del Casanare S.A.S." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/X8hFzcMtgFZlelsrehkzbifzdwz1/social-images/social-1781581592598-LOGO.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/X8hFzcMtgFZlelsrehkzbifzdwz1/social-images/social-1781581592598-LOGO.webp" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
