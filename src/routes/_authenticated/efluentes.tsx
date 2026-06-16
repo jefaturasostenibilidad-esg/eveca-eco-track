@@ -196,6 +196,9 @@ function EfluentesPage() {
       cantidad_aceite_recuperado_litros: r.cantidad_aceite_recuperado_litros?.toString() ?? "",
       uso_contingencia: r.uso_contingencia,
       observaciones: r.observaciones ?? "",
+      ph: r.ph?.toString() ?? "",
+      temperatura_c: r.temperatura_c?.toString() ?? "",
+      volumetria_ml: r.volumetria_ml?.toString() ?? "",
     });
     setOpen(true);
   };
