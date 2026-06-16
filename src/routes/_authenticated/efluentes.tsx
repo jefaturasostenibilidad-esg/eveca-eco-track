@@ -340,39 +340,77 @@ function EfluentesPage() {
 
                 {isPome && (
                   <div className="space-y-4 p-4 rounded-lg bg-secondary/40 border border-border">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <Label>Nivel inicial (cm)</Label>
-                        <Input type="number" min={0} step="0.01" value={form.nivel_inicial_cm}
-                          onChange={(e) => setForm({ ...form, nivel_inicial_cm: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Nivel final (cm)</Label>
-                        <Input type="number" min={0} step="0.01" value={form.nivel_final_cm}
-                          onChange={(e) => setForm({ ...form, nivel_final_cm: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label>Cantidad POME (m³) — automático</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          readOnly
-                          tabIndex={-1}
-                          value={form.cantidad_pome_m3}
-                          className="bg-muted/50 cursor-not-allowed font-display font-semibold"
-                          placeholder="0.00"
-                        />
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          Factor {form.tanque}: {FACTOR_POME_M3_POR_CM[form.tanque]} m³/cm
-                        </p>
-                      </div>
-                    </div>
-                    {form.nivel_inicial_cm !== "" && form.nivel_final_cm !== "" &&
-                      Number(form.nivel_final_cm) < Number(form.nivel_inicial_cm) && (
-                        <p className="text-xs text-amber-600 -mt-2">
-                          El nivel final debe ser mayor al inicial.
-                        </p>
-                      )}
+                    {(() => {
+                      const diametro = DIAMETRO_TANQUE_M[form.tanque];
+                      const radio = diametro / 2;
+                      const h = Number(form.nivel_liquido_cm || 0);
+                      const hM = h / 100;
+                      const vol = calcularVolumenM3(form.tanque, form.nivel_liquido_cm);
+                      const excedeMax = h > ALTURA_MAX_CM;
+                      return (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <div className="sm:col-span-2">
+                              <Label>Nivel del líquido (cm) *</Label>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={ALTURA_LIMITE_CM}
+                                step="0.01"
+                                required
+                                value={form.nivel_liquido_cm}
+                                onChange={(e) => setForm({ ...form, nivel_liquido_cm: e.target.value })}
+                                placeholder="Ej: 150"
+                              />
+                            </div>
+                            <div>
+                              <Label>Diámetro (m)</Label>
+                              <Input
+                                type="number"
+                                readOnly
+                                tabIndex={-1}
+                                value={diametro.toFixed(2)}
+                                className="bg-muted/50 cursor-not-allowed"
+                              />
+                            </div>
+                            <div>
+                              <Label>Radio (m)</Label>
+                              <Input
+                                type="number"
+                                readOnly
+                                tabIndex={-1}
+                                value={radio.toFixed(3)}
+                                className="bg-muted/50 cursor-not-allowed"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Cantidad POME (m³) — automático</Label>
+                            <Input
+                              type="text"
+                              readOnly
+                              tabIndex={-1}
+                              value={vol > 0 ? vol.toFixed(4) : "0.0000"}
+                              className="bg-muted/50 cursor-not-allowed font-display font-semibold text-lg"
+                            />
+                            <p className="text-[11px] text-muted-foreground mt-1 font-mono">
+                              V = π × (D/2)² × h = π × {radio.toFixed(3)}² × {hM.toFixed(3)} m = {vol.toFixed(4)} m³
+                            </p>
+                          </div>
+                          {excedeMax && h <= ALTURA_LIMITE_CM && (
+                            <p className="text-xs text-amber-600">
+                              ⚠ El nivel supera la altura nominal del tanque ({ALTURA_MAX_CM} cm). Verifique la lectura.
+                            </p>
+                          )}
+                          {h > ALTURA_LIMITE_CM && (
+                            <p className="text-xs text-destructive">
+                              El nivel excede el máximo permitido ({ALTURA_LIMITE_CM} cm).
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+
                     <div className="flex items-center gap-3 p-3 rounded-md bg-card border border-border">
                       <Switch checked={form.enviado_biodigestor}
                         onCheckedChange={(v) => setForm({ ...form, enviado_biodigestor: v })} />
