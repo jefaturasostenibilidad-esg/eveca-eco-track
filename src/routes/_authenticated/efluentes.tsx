@@ -46,6 +46,9 @@ interface Registro {
   cantidad_aceite_recuperado_litros: number | null;
   uso_contingencia: boolean;
   observaciones: string | null;
+  ph: number | null;
+  temperatura_c: number | null;
+  volumetria_ml: number | null;
   operador_id: string | null;
   created_at: string;
 }
