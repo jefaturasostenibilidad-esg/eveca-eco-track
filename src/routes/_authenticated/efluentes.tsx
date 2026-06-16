@@ -244,6 +244,9 @@ function EfluentesPage() {
       cantidad_aceite_recuperado_litros: form.tanque === "TK2" ? Number(form.cantidad_aceite_recuperado_litros) : null,
       uso_contingencia: form.tanque === "TK4" ? form.uso_contingencia : false,
       observaciones: form.observaciones.trim() || null,
+      ph: form.ph !== "" ? Number(form.ph) : null,
+      temperatura_c: form.temperatura_c !== "" ? Number(form.temperatura_c) : null,
+      volumetria_ml: form.volumetria_ml !== "" ? Number(form.volumetria_ml) : null,
       operador_id: user.id,
       updated_at: new Date().toISOString(),
     };
