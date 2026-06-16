@@ -213,8 +213,14 @@ function EfluentesPage() {
     // Validaciones por tanque
     const isPome = form.tanque === "TK1" || form.tanque === "TK3";
     if (isPome) {
+      if (form.nivel_liquido_cm === "" || Number(form.nivel_liquido_cm) <= 0) {
+        return toast.error("Nivel del líquido (cm) es requerido y debe ser > 0");
+      }
+      if (Number(form.nivel_liquido_cm) > ALTURA_LIMITE_CM) {
+        return toast.error(`Nivel máximo permitido: ${ALTURA_LIMITE_CM} cm`);
+      }
       if (!form.cantidad_pome_m3 || Number(form.cantidad_pome_m3) < 0) {
-        return toast.error("Cantidad de POME es requerida y debe ser ≥ 0");
+        return toast.error("Volumen calculado inválido");
       }
       if (form.enviado_biodigestor) {
         if (!form.biodigestor_destino) return toast.error("Selecciona el biodigestor destino");
@@ -224,6 +230,7 @@ function EfluentesPage() {
         if (env > total) return toast.error("La cantidad enviada al biodigestor no puede superar la cantidad total de POME");
       }
     }
+
     if (form.tanque === "TK2") {
       if (!form.cantidad_aceite_recuperado_litros || Number(form.cantidad_aceite_recuperado_litros) < 0) {
         return toast.error("Cantidad de aceite recuperado es requerida y debe ser ≥ 0");
