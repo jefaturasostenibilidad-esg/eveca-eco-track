@@ -245,8 +245,10 @@ function EfluentesPage() {
       hora: form.hora,
       tanque: form.tanque,
       cantidad_pome_m3: isPome ? Number(form.cantidad_pome_m3) : (form.tanque === "TK4" && form.cantidad_pome_m3 ? Number(form.cantidad_pome_m3) : null),
-      nivel_inicial_cm: isPome && form.nivel_inicial_cm ? Number(form.nivel_inicial_cm) : null,
-      nivel_final_cm: isPome && form.nivel_final_cm ? Number(form.nivel_final_cm) : null,
+      nivel_liquido_cm: isPome && form.nivel_liquido_cm ? Number(form.nivel_liquido_cm) : null,
+      diametro_m: isPome ? DIAMETRO_TANQUE_M[form.tanque] : null,
+      radio_m: isPome ? DIAMETRO_TANQUE_M[form.tanque] / 2 : null,
+
       enviado_biodigestor: isPome ? form.enviado_biodigestor : false,
       biodigestor_destino: isPome && form.enviado_biodigestor ? form.biodigestor_destino || null : null,
       cantidad_pome_biodigestor_m3: isPome && form.enviado_biodigestor && form.cantidad_pome_biodigestor_m3
