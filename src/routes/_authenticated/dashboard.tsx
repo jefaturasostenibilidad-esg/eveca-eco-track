@@ -48,7 +48,16 @@ function fechaBonita(iso: string) {
 function formatHora(d: Date) {
   return d.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 }
-function mismaFecha(a: string, b: string) { return (a ?? "").slice(0,10) === b; }
+function localDateString(isoOrDate: string | null | undefined) {
+  if (!isoOrDate) return "";
+  if (isoOrDate.includes("T")) {
+    const d = new Date(isoOrDate);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  return isoOrDate.slice(0, 10);
+}
+
+function mismaFecha(a: string, b: string) { return localDateString(a) === b; }
 
 function EmptyChart({ label }: { label: string }) {
   return (
@@ -126,8 +135,8 @@ function Dashboard() {
     const contingencias= efluentes.filter(e=>e.uso_contingencia&&mismaFecha(e.fecha,hoy)).length;
     const desde30 = new Date(); desde30.setDate(desde30.getDate()-30);
     const dISO30 = `${desde30.getFullYear()}-${String(desde30.getMonth()+1).padStart(2,"0")}-${String(desde30.getDate()).padStart(2,"0")}`;
-    const pomeMes    = efluentes.filter(e=>e.fecha>=dISO30).reduce((s,e)=>s+(e.cantidad_pome_m3??0),0);
-    const residuosMes= ambiental.filter(r=>r.fecha>=dISO30&&r.cantidad_residuo_kg).reduce((s,r)=>s+(r.cantidad_residuo_kg??0),0);
+    const pomeMes    = efluentes.filter(e=>localDateString(e.fecha)>=dISO30).reduce((s,e)=>s+(e.cantidad_pome_m3??0),0);
+    const residuosMes= ambiental.filter(r=>localDateString(r.fecha)>=dISO30&&r.cantidad_residuo_kg).reduce((s,r)=>s+(r.cantidad_residuo_kg??0),0);
     return {pomeHoy,biodigHoy,aceiteHoy,residuosHoy,aguaHoy,areaHoy,reportesHoy,contingencias,pomeMes,residuosMes};
   },[efluentes,ambiental,zonas,reportes,hoy]);
 
@@ -139,7 +148,7 @@ function Dashboard() {
       byDay[k]={dia:k.slice(5),pome:0,biodigestor:0,aceite:0};
     }
     efluentes.forEach(e=>{
-      const k=e.fecha.slice(0,10);
+      const k=localDateString(e.fecha);
       if(byDay[k]){byDay[k].pome+=e.cantidad_pome_m3??0;byDay[k].biodigestor+=e.cantidad_pome_biodigestor_m3??0;byDay[k].aceite+=e.cantidad_aceite_recuperado_litros??0;}
     });
     return Object.values(byDay);
@@ -168,7 +177,7 @@ function Dashboard() {
       byDay[k]={dia:k.slice(5),total:0};
     }
     ambiental.filter(r=>r.categoria==="agua_energia"&&r.subcategoria==="Consumo de agua").forEach(r=>{
-      const k=r.fecha.slice(0,10); if(byDay[k]) byDay[k].total+=r.valor_medicion??0;
+      const k=localDateString(r.fecha); if(byDay[k]) byDay[k].total+=r.valor_medicion??0;
     });
     return Object.values(byDay);
   },[ambiental]);
