@@ -29,7 +29,7 @@ interface Efluente {
 }
 interface Ambiental {
   fecha: string; categoria: string; subcategoria: string | null;
-  cantidad_residuo_kg: number | null; agua_total_m3: number | null;
+  cantidad_residuo_kg: number | null;
   valor_medicion: number | null; unidad_medicion: string | null;
 }
 interface Zonas { fecha: string; actividad: string; area_m2: number | null; }
@@ -82,7 +82,7 @@ function Dashboard() {
           .select("fecha,tanque,cantidad_pome_m3,cantidad_pome_biodigestor_m3,cantidad_aceite_recuperado_litros,uso_contingencia")
           .gte("fecha", dISO).order("fecha",{ascending:true}),
         supabase.from("registros_ambiental")
-          .select("fecha,categoria,subcategoria,cantidad_residuo_kg,agua_total_m3,valor_medicion,unidad_medicion")
+          .select("fecha,categoria,subcategoria,cantidad_residuo_kg,valor_medicion,unidad_medicion")
           .gte("fecha", dISO).order("fecha",{ascending:true}),
         supabase.from("registros_zonas_verdes")
           .select("fecha,actividad,area_m2").gte("fecha", dISO).order("fecha",{ascending:true}),
@@ -120,7 +120,7 @@ function Dashboard() {
     const biodigHoy  = efluentes.filter(e=>mismaFecha(e.fecha,hoy)).reduce((s,e)=>s+(e.cantidad_pome_biodigestor_m3??0),0);
     const aceiteHoy  = efluentes.filter(e=>mismaFecha(e.fecha,hoy)).reduce((s,e)=>s+(e.cantidad_aceite_recuperado_litros??0),0);
     const residuosHoy= ambiental.filter(r=>mismaFecha(r.fecha,hoy)&&r.cantidad_residuo_kg).reduce((s,r)=>s+(r.cantidad_residuo_kg??0),0);
-    const aguaHoy    = ambiental.filter(r=>mismaFecha(r.fecha,hoy)&&r.categoria==="agua_energia"&&r.agua_total_m3).reduce((s,r)=>s+(r.agua_total_m3??0),0);
+    const aguaHoy    = ambiental.filter(r=>mismaFecha(r.fecha,hoy)&&r.categoria==="agua_energia"&&r.subcategoria==="Consumo de agua").reduce((s,r)=>s+(r.valor_medicion??0),0);
     const areaHoy    = zonas.filter(z=>mismaFecha(z.fecha,hoy)).reduce((s,z)=>s+(z.area_m2??0),0);
     const reportesHoy= reportes.filter(r=>mismaFecha(r.fecha,hoy)).length;
     const contingencias= efluentes.filter(e=>e.uso_contingencia&&mismaFecha(e.fecha,hoy)).length;
@@ -167,8 +167,8 @@ function Dashboard() {
       const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
       byDay[k]={dia:k.slice(5),total:0};
     }
-    ambiental.filter(r=>r.categoria==="agua_energia"&&r.agua_total_m3).forEach(r=>{
-      const k=r.fecha.slice(0,10); if(byDay[k]) byDay[k].total+=r.agua_total_m3??0;
+    ambiental.filter(r=>r.categoria==="agua_energia"&&r.subcategoria==="Consumo de agua").forEach(r=>{
+      const k=r.fecha.slice(0,10); if(byDay[k]) byDay[k].total+=r.valor_medicion??0;
     });
     return Object.values(byDay);
   },[ambiental]);
