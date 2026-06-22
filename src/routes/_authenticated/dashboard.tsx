@@ -177,17 +177,30 @@ function Dashboard() {
     return Object.entries(months).map(([name,value])=>({name,value}));
   },[ambiental]);
 
-  const serieAgua = useMemo(()=>{
-    const byDay: Record<string,{dia:string;total:number}>={};
-    for(let i=29;i>=0;i--){
-      const d=new Date(); d.setDate(d.getDate()-i);
-      const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      byDay[k]={dia:k.slice(5),total:0};
+  const promedioAguaPorMes = useMemo(()=>{
+    const months: Record<string,{ name: string; vivero: number; ptai: number; filtrada: number; suavizada: number; count: number }>={};
+    for(let i=5;i>=0;i--){
+      const d=new Date(); d.setMonth(d.getMonth()-i);
+      const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      months[k]={ name: k, vivero: 0, ptai: 0, filtrada: 0, suavizada: 0, count: 0 };
     }
     ambiental.filter(r=>r.categoria==="agua_energia"&&r.subcategoria==="Consumo de agua").forEach(r=>{
-      const k=localDateString(r.fecha); if(byDay[k]) byDay[k].total+=r.valor_medicion??0;
+      const k=localDateString(r.fecha).slice(0,7);
+      if(months[k] && r.valor_medicion != null) {
+        months[k].vivero += r.agua_vivero_m3 ?? 0;
+        months[k].ptai += r.agua_ptai_m3 ?? 0;
+        months[k].filtrada += r.agua_filtrada_m3 ?? 0;
+        months[k].suavizada += r.agua_suavizada_m3 ?? 0;
+        months[k].count++;
+      }
     });
-    return Object.values(byDay);
+    return Object.values(months).map(m=>({
+      name: m.name,
+      Vivero: m.count > 0 ? Number((m.vivero / m.count).toFixed(2)) : 0,
+      PETAR: m.count > 0 ? Number((m.ptai / m.count).toFixed(2)) : 0,
+      Filtrada: m.count > 0 ? Number((m.filtrada / m.count).toFixed(2)) : 0,
+      Suavizada: m.count > 0 ? Number((m.suavizada / m.count).toFixed(2)) : 0,
+    }));
   },[ambiental]);
 
   const reportesPorTipo = useMemo(()=>{
@@ -360,23 +373,21 @@ function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="font-display text-sm">Consumo de agua (m³) — últimos 30 días</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="font-display text-sm">Promedio mensual de consumo de agua (m³)</CardTitle></CardHeader>
             <CardContent className="h-64">
-              {serieAgua.every(d=>d.total===0)?<EmptyChart label="Sin registros de consumo de agua en los últimos 30 días"/>:(
+              {promedioAguaPorMes.every(d=>d.Vivero===0&&d.PETAR===0&&d.Filtrada===0&&d.Suavizada===0)?<EmptyChart label="Sin registros de consumo de agua en los últimos 6 meses"/>:(
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={serieAgua} margin={{top:4,right:8,left:-10,bottom:0}}>
-                    <defs>
-                      <linearGradient id="aguaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/>
-                    <XAxis dataKey="dia" tick={{fontSize:10}} interval={4}/>
-                    <YAxis tick={{fontSize:11}}/>
+                  <BarChart data={promedioAguaPorMes} margin={{top:4,right:8,left:-10,bottom:0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false}/>
+                    <XAxis dataKey="name" tick={{fontSize:11}} tickFormatter={(v)=>v.slice(5)}/>
+                    <YAxis tick={{fontSize:11}} width={45}/>
                     <Tooltip content={<CustomTooltip/>}/>
-                    <Area type="monotone" dataKey="total" name="Agua m³" stroke="#0ea5e9" strokeWidth={2} fill="url(#aguaGrad)" dot={{r:2,fill:"#0ea5e9"}} activeDot={{r:4}}/>
-                  </AreaChart>
+                    <Legend wrapperStyle={{fontSize:'11px'}}/>
+                    <Bar dataKey="Vivero" fill="#22c55e" radius={[2,2,0,0]} />
+                    <Bar dataKey="PETAR" fill="#1e3a8a" radius={[2,2,0,0]} />
+                    <Bar dataKey="Filtrada" fill="#7dd3fc" radius={[2,2,0,0]} />
+                    <Bar dataKey="Suavizada" fill="#38bdf8" radius={[2,2,0,0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               )}
             </CardContent>
