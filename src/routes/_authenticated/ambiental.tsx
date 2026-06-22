@@ -67,6 +67,13 @@ interface Registro {
   agua_ptai_m3?: number | null;
   agua_vivero_m3?: number | null;
   agua_total_m3?: number | null;
+  lectura_vivero_m3?: number | null;
+  lectura_petar_m3?: number | null;
+  lectura_filtrada_m3?: number | null;
+  lectura_suavizada_m3?: number | null;
+  hora_lectura?: string | null;
+  consumo_dia_m3?: number | null;
+  consumo_noche_m3?: number | null;
 }
 
 
@@ -95,6 +102,11 @@ interface FormState {
   agua_filtrada_m3: string;
   agua_ptai_m3: string;
   agua_vivero_m3: string;
+  lectura_vivero_m3: string;
+  lectura_petar_m3: string;
+  lectura_filtrada_m3: string;
+  lectura_suavizada_m3: string;
+  hora_lectura: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -114,6 +126,11 @@ const emptyForm = (): FormState => ({
   agua_filtrada_m3: "",
   agua_ptai_m3: "",
   agua_vivero_m3: "",
+  lectura_vivero_m3: "",
+  lectura_petar_m3: "",
+  lectura_filtrada_m3: "",
+  lectura_suavizada_m3: "",
+  hora_lectura: "07:00",
 });
 
 
@@ -174,6 +191,11 @@ function AmbientalPage() {
       agua_filtrada_m3: r.agua_filtrada_m3?.toString() ?? "",
       agua_ptai_m3: r.agua_ptai_m3?.toString() ?? "",
       agua_vivero_m3: r.agua_vivero_m3?.toString() ?? "",
+      lectura_vivero_m3: r.lectura_vivero_m3?.toString() ?? "",
+      lectura_petar_m3: r.lectura_petar_m3?.toString() ?? "",
+      lectura_filtrada_m3: r.lectura_filtrada_m3?.toString() ?? "",
+      lectura_suavizada_m3: r.lectura_suavizada_m3?.toString() ?? "",
+      hora_lectura: r.hora_lectura ?? "07:00",
     });
     setOpen(true);
   };
@@ -198,18 +220,82 @@ function AmbientalPage() {
     setSubmitting(true);
     
     const isWater = form.categoria === "agua_energia" && form.subcategoria === "Consumo de agua";
-    const suavizada = isWater ? (form.agua_suavizada_m3 ? Number(form.agua_suavizada_m3) : 0) : null;
-    const filtrada = isWater ? (form.agua_filtrada_m3 ? Number(form.agua_filtrada_m3) : 0) : null;
-    const ptai = isWater ? (form.agua_ptai_m3 ? Number(form.agua_ptai_m3) : 0) : null;
-    const vivero = isWater ? (form.agua_vivero_m3 ? Number(form.agua_vivero_m3) : 0) : null;
-    const totalWater = isWater ? (suavizada || 0) + (filtrada || 0) + (ptai || 0) + (vivero || 0) : null;
+    let consumo_dia_m3: number | null = null;
+    let consumo_noche_m3: number | null = null;
+    let totalWater: number | null = null;
+    let suavizada: number | null = null;
+    let filtrada: number | null = null;
+    let ptai: number | null = null;
+    let vivero: number | null = null;
+
+    if (isWater) {
+      const curViv = Number(form.lectura_vivero_m3) || 0;
+      const curPet = Number(form.lectura_petar_m3) || 0;
+      const curFil = Number(form.lectura_filtrada_m3) || 0;
+      const curSua = Number(form.lectura_suavizada_m3) || 0;
+
+      if (form.hora_lectura === "16:00") {
+        const { data: prev7am } = await supabase
+          .from("registros_ambiental")
+          .select("*")
+          .eq("fecha", form.fecha)
+          .eq("categoria", "agua_energia")
+          .eq("subcategoria", "Consumo de agua")
+          .eq("hora_lectura", "07:00")
+          .maybeSingle();
+
+        if (prev7am) {
+          const v = curViv - (prev7am.lectura_vivero_m3 || 0);
+          const p = curPet - (prev7am.lectura_petar_m3 || 0);
+          const f = curFil - (prev7am.lectura_filtrada_m3 || 0);
+          const s = curSua - (prev7am.lectura_suavizada_m3 || 0);
+          consumo_dia_m3 = (v>0?v:0) + (p>0?p:0) + (f>0?f:0) + (s>0?s:0);
+        }
+      } else if (form.hora_lectura === "07:00") {
+        const yesterday = new Date(new Date(form.fecha).getTime() - 86400000).toISOString().slice(0, 10);
+        const { data: prev16pm } = await supabase
+          .from("registros_ambiental")
+          .select("*")
+          .eq("fecha", yesterday)
+          .eq("categoria", "agua_energia")
+          .eq("subcategoria", "Consumo de agua")
+          .eq("hora_lectura", "16:00")
+          .maybeSingle();
+
+        if (prev16pm) {
+          const v = curViv - (prev16pm.lectura_vivero_m3 || 0);
+          const p = curPet - (prev16pm.lectura_petar_m3 || 0);
+          const f = curFil - (prev16pm.lectura_filtrada_m3 || 0);
+          const s = curSua - (prev16pm.lectura_suavizada_m3 || 0);
+          consumo_noche_m3 = (v>0?v:0) + (p>0?p:0) + (f>0?f:0) + (s>0?s:0);
+        }
+
+        const { data: prev7amYesterday } = await supabase
+          .from("registros_ambiental")
+          .select("*")
+          .eq("fecha", yesterday)
+          .eq("categoria", "agua_energia")
+          .eq("subcategoria", "Consumo de agua")
+          .eq("hora_lectura", "07:00")
+          .maybeSingle();
+
+        if (prev7amYesterday) {
+          const v = curViv - (prev7amYesterday.lectura_vivero_m3 || 0);
+          const p = curPet - (prev7amYesterday.lectura_petar_m3 || 0);
+          const f = curFil - (prev7amYesterday.lectura_filtrada_m3 || 0);
+          const s = curSua - (prev7amYesterday.lectura_suavizada_m3 || 0);
+          vivero = v>0?v:0; ptai = p>0?p:0; filtrada = f>0?f:0; suavizada = s>0?s:0;
+          totalWater = vivero + ptai + filtrada + suavizada;
+        }
+      }
+    }
 
     const payload = {
       fecha: form.fecha,
       categoria: form.categoria,
       subcategoria: form.subcategoria,
       descripcion: form.descripcion,
-      valor_medicion: isWater ? totalWater : (form.valor_medicion ? Number(form.valor_medicion) : null),
+      valor_medicion: isWater ? (totalWater !== null ? totalWater : null) : (form.valor_medicion ? Number(form.valor_medicion) : null),
       unidad_medicion: isWater ? "m³" : (form.unidad_medicion || null),
       tipo_residuo: form.categoria === "residuos_solidos" ? (form.tipo_residuo || null) : null,
       cantidad_residuo_kg: form.categoria === "residuos_solidos" && form.cantidad_residuo_kg ? Number(form.cantidad_residuo_kg) : null,
@@ -223,6 +309,13 @@ function AmbientalPage() {
       agua_ptai_m3: ptai,
       agua_vivero_m3: vivero,
       agua_total_m3: totalWater,
+      lectura_vivero_m3: isWater ? Number(form.lectura_vivero_m3) : null,
+      lectura_petar_m3: isWater ? Number(form.lectura_petar_m3) : null,
+      lectura_filtrada_m3: isWater ? Number(form.lectura_filtrada_m3) : null,
+      lectura_suavizada_m3: isWater ? Number(form.lectura_suavizada_m3) : null,
+      hora_lectura: isWater ? form.hora_lectura : null,
+      consumo_dia_m3: isWater ? consumo_dia_m3 : null,
+      consumo_noche_m3: isWater ? consumo_noche_m3 : null,
     };
 
     let targetId = editing?.id;
@@ -234,6 +327,7 @@ function AmbientalPage() {
         .eq("fecha", form.fecha)
         .eq("categoria", "agua_energia")
         .eq("subcategoria", "Consumo de agua")
+        .eq("hora_lectura", form.hora_lectura)
         .maybeSingle();
       if (existing) {
         targetId = existing.id;
@@ -467,55 +561,54 @@ function AmbientalPage() {
 
             {form.categoria === "agua_energia" && form.subcategoria === "Consumo de agua" ? (
               <>
-                <div>
-                  <Label>Agua suavizada (m³)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={form.agua_suavizada_m3}
-                    onChange={(e) => setForm({ ...form, agua_suavizada_m3: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Agua filtrada (m³)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={form.agua_filtrada_m3}
-                    onChange={(e) => setForm({ ...form, agua_filtrada_m3: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Agua PTAI (m³)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={form.agua_ptai_m3}
-                    onChange={(e) => setForm({ ...form, agua_ptai_m3: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Agua Vivero (m³)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={form.agua_vivero_m3}
-                    onChange={(e) => setForm({ ...form, agua_vivero_m3: e.target.value })}
-                  />
-                </div>
                 <div className="md:col-span-2">
-                  <Label>Consumo total de agua (m³)</Label>
+                  <Label>Hora de lectura</Label>
+                  <Select value={form.hora_lectura} onValueChange={(v) => setForm({ ...form, hora_lectura: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="07:00">7:00 a.m. (Cierre 24h)</SelectItem>
+                      <SelectItem value="16:00">4:00 p.m. (Cierre Turno Día)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Lectura Medidor Suavizada (m³)</Label>
                   <Input
                     type="number"
-                    readOnly
-                    value={
-                      (Number(form.agua_suavizada_m3) || 0) +
-                      (Number(form.agua_filtrada_m3) || 0) +
-                      (Number(form.agua_ptai_m3) || 0) +
-                      (Number(form.agua_vivero_m3) || 0)
-                    }
-                    className="bg-muted font-bold"
+                    step="0.01"
+                    value={form.lectura_suavizada_m3}
+                    onChange={(e) => setForm({ ...form, lectura_suavizada_m3: e.target.value })}
                   />
+                </div>
+                <div>
+                  <Label>Lectura Medidor Filtrada (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.lectura_filtrada_m3}
+                    onChange={(e) => setForm({ ...form, lectura_filtrada_m3: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Lectura Medidor PETAR Entrada (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.lectura_petar_m3}
+                    onChange={(e) => setForm({ ...form, lectura_petar_m3: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Lectura Medidor Vivero (m³)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.lectura_vivero_m3}
+                    onChange={(e) => setForm({ ...form, lectura_vivero_m3: e.target.value })}
+                  />
+                </div>
+                <div className="md:col-span-2 text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                  Los consumos totales y por turno se calcularán automáticamente al guardar la lectura comparando con el registro anterior.
                 </div>
               </>
             ) : (
@@ -590,6 +683,9 @@ function AmbientalPage() {
             const p = selectedWaterRecord.agua_ptai_m3 ?? 0;
             const v = selectedWaterRecord.agua_vivero_m3 ?? 0;
             const total = selectedWaterRecord.agua_total_m3 ?? selectedWaterRecord.valor_medicion ?? (s + f + p + v);
+            const dia = selectedWaterRecord.consumo_dia_m3;
+            const noche = selectedWaterRecord.consumo_noche_m3;
+            const hora = selectedWaterRecord.hora_lectura;
 
             const data = [
               { name: "Agua suavizada", value: s },
@@ -612,12 +708,26 @@ function AmbientalPage() {
               <div className="space-y-6 py-2">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-primary/10 border border-primary/20 rounded-xl">
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Fecha del registro</p>
-                    <p className="text-lg font-bold font-mono text-primary mt-0.5">{selectedWaterRecord.fecha}</p>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Fecha de registro</p>
+                    <p className="text-lg font-bold font-mono text-primary mt-0.5">{selectedWaterRecord.fecha} {hora ? `(${hora})` : ""}</p>
                   </div>
-                  <div className="text-right md:text-right">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Consumo Total</p>
-                    <p className="text-2xl font-bold text-primary mt-0.5 font-mono">{total} m³</p>
+                  <div className="flex gap-4 text-right">
+                    {dia != null && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Turno Día</p>
+                        <p className="text-xl font-bold text-foreground mt-0.5 font-mono">{dia} m³</p>
+                      </div>
+                    )}
+                    {noche != null && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Turno Noche</p>
+                        <p className="text-xl font-bold text-foreground mt-0.5 font-mono">{noche} m³</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-primary font-medium uppercase tracking-wider">Total 24h</p>
+                      <p className="text-2xl font-bold text-primary mt-0.5 font-mono">{total} m³</p>
+                    </div>
                   </div>
                 </div>
 
