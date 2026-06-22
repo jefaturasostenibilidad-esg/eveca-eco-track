@@ -83,7 +83,7 @@ function Dashboard() {
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true);
-    const desde = new Date(); desde.setDate(desde.getDate() - 180);
+    const desde = new Date(); desde.setDate(desde.getDate() - 365);
     const dISO = desde.toISOString().slice(0,10);
     try {
       const [a,b,c,d] = await Promise.all([
@@ -157,17 +157,25 @@ function Dashboard() {
   const residuosPorCat = useMemo(()=>{
     const hoyData = ambiental.filter(r=>mismaFecha(r.fecha,hoy)&&r.cantidad_residuo_kg);
     const source  = hoyData.length>0 ? hoyData : ambiental.filter(r=>r.cantidad_residuo_kg);
-    const label   = hoyData.length>0 ? "hoy" : "180d";
+    const label   = hoyData.length>0 ? "hoy" : "365d";
     const map: Record<string,number> = {};
     source.forEach(r=>{const cat=r.subcategoria || "Otro";map[cat]=(map[cat]??0)+(r.cantidad_residuo_kg??0);});
     return {data:Object.entries(map).map(([name,value])=>({name,value})),label};
   },[ambiental,hoy]);
 
-  const zonasPorAct = useMemo(()=>{
-    const map: Record<string,number>={};
-    zonas.forEach(z=>{map[z.actividad]=(map[z.actividad]??0)+(z.area_m2??0);});
-    return Object.entries(map).map(([name,value])=>({name,value}));
-  },[zonas]);
+  const energiaPorMes = useMemo(()=>{
+    const months: Record<string,number>={};
+    for(let i=11;i>=0;i--){
+      const d=new Date(); d.setMonth(d.getMonth()-i);
+      const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      months[k]=0;
+    }
+    ambiental.filter(r=>r.categoria==="agua_energia"&&r.subcategoria==="Consumo energía kWh").forEach(r=>{
+      const k=localDateString(r.fecha).slice(0,7);
+      if(months[k]!==undefined) months[k]+=r.valor_medicion??0;
+    });
+    return Object.entries(months).map(([name,value])=>({name,value}));
+  },[ambiental]);
 
   const serieAgua = useMemo(()=>{
     const byDay: Record<string,{dia:string;total:number}>={};
@@ -242,7 +250,7 @@ function Dashboard() {
     {icon:Leaf,label:"Residuos del día",val:kpis.residuosHoy.toFixed(1),unit:"kg",sub:`${kpis.residuosMes.toFixed(1)} kg en 30 días`,color:"text-green-700 bg-green-50 border-green-200",iconBg:"bg-green-100"},
     {icon:Droplets,label:"Agua total hoy",val:kpis.aguaHoy.toFixed(2),unit:"m³",sub:"Agua y energía",color:"text-sky-700 bg-sky-50 border-sky-200",iconBg:"bg-sky-100"},
     {icon:TreePine,label:"Área intervenida hoy",val:kpis.areaHoy.toFixed(0),unit:"m²",sub:"Zonas verdes",color:"text-teal-700 bg-teal-50 border-teal-200",iconBg:"bg-teal-100"},
-    {icon:FileText,label:"Reportes de hoy",val:String(kpis.reportesHoy),unit:"",sub:`${reportes.length} en 180 días`,color:"text-indigo-700 bg-indigo-50 border-indigo-200",iconBg:"bg-indigo-100"},
+    {icon:FileText,label:"Reportes de hoy",val:String(kpis.reportesHoy),unit:"",sub:`${reportes.length} en 365 días`,color:"text-indigo-700 bg-indigo-50 border-indigo-200",iconBg:"bg-indigo-100"},
   ];
 
   return(
@@ -398,16 +406,16 @@ function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="font-display text-sm">Zonas verdes — m² por actividad (180d)</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="font-display text-sm">Consumo de energía kWh por mes</CardTitle></CardHeader>
             <CardContent className="h-64">
-              {zonasPorAct.length===0?<EmptyChart label="Sin registros de zonas verdes"/>:(
+              {energiaPorMes.every(d=>d.value===0)?<EmptyChart label="Sin registros de energía en 12 meses"/>:(
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={zonasPorAct} layout="vertical" margin={{top:4,right:16,left:60,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/>
-                    <XAxis type="number" tick={{fontSize:11}}/>
-                    <YAxis dataKey="name" type="category" tick={{fontSize:11}} width={60}/>
+                  <BarChart data={energiaPorMes} margin={{top:4,right:16,left:0,bottom:0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false}/>
+                    <XAxis dataKey="name" tick={{fontSize:11}} tickFormatter={(v)=>v.slice(5)}/>
+                    <YAxis tick={{fontSize:11}} width={45}/>
                     <Tooltip content={<CustomTooltip/>}/>
-                    <Bar dataKey="value" name="m²" fill="#16a34a" radius={[0,2,2,0]}/>
+                    <Bar dataKey="value" name="kWh" fill="#3b82f6" radius={[2,2,0,0]}/>
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -415,9 +423,9 @@ function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="font-display text-sm">Reportes por tipo (180d)</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="font-display text-sm">Reportes por tipo (365d)</CardTitle></CardHeader>
             <CardContent className="h-64">
-              {reportesPorTipo.length===0?<EmptyChart label="Sin reportes en los últimos 180 días"/>:(
+              {reportesPorTipo.length===0?<EmptyChart label="Sin reportes en los últimos 365 días"/>:(
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={reportesPorTipo} dataKey="value" nameKey="name" outerRadius={80} innerRadius={30}
