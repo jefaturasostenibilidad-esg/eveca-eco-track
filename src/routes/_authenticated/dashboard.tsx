@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,7 +150,7 @@ function Dashboard() {
     const source  = hoyData.length>0 ? hoyData : ambiental.filter(r=>r.cantidad_residuo_kg);
     const label   = hoyData.length>0 ? "hoy" : "180d";
     const map: Record<string,number> = {};
-    source.forEach(r=>{const cat=r.categoria.replace(/_/g," ");map[cat]=(map[cat]??0)+(r.cantidad_residuo_kg??0);});
+    source.forEach(r=>{const cat=r.subcategoria || "Otro";map[cat]=(map[cat]??0)+(r.cantidad_residuo_kg??0);});
     return {data:Object.entries(map).map(([name,value])=>({name,value})),label};
   },[ambiental,hoy]);
 
