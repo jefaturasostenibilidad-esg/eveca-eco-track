@@ -40,6 +40,9 @@ interface AuditEntry {
   modulo: string;
   descripcion: string;
   created_at: string;
+  profiles?: {
+    nombre_completo: string;
+  } | null;
 }
 
 function AdminPage() {
@@ -287,7 +290,7 @@ function AuditTab() {
     setLoading(true);
     const { data, error } = await supabase
       .from("audit_log")
-      .select("id,usuario_email,accion,modulo,descripcion,created_at")
+      .select("id,usuario_email,accion,modulo,descripcion,created_at,profiles(nombre_completo)")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) toast.error(error.message);
@@ -301,7 +304,13 @@ function AuditTab() {
     if (filterMod !== "all" && e.modulo !== filterMod) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!e.descripcion.toLowerCase().includes(q) && !(e.usuario_email ?? "").toLowerCase().includes(q)) return false;
+      if (
+        !e.descripcion.toLowerCase().includes(q) &&
+        !(e.usuario_email ?? "").toLowerCase().includes(q) &&
+        !(e.profiles?.nombre_completo ?? "").toLowerCase().includes(q)
+      ) {
+        return false;
+      }
     }
     return true;
   });
@@ -358,7 +367,24 @@ function AuditTab() {
                 {filtered.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell className="font-mono text-xs whitespace-nowrap">{new Date(e.created_at).toLocaleString("es-CO")}</TableCell>
-                    <TableCell className="text-xs">{e.usuario_email ?? "sistema"}</TableCell>
+                    <TableCell className="text-xs">
+                      {e.profiles?.nombre_completo ? (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">
+                            {e.profiles.nombre_completo}
+                          </span>
+                          {e.usuario_email && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {e.usuario_email}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {e.usuario_email ?? "Sistema"}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell><Badge className={`${accionColor(e.accion)} border-0 text-[10px]`}>{e.accion}</Badge></TableCell>
                     <TableCell className="text-xs"><Badge variant="outline" className="text-[10px]">{e.modulo}</Badge></TableCell>
                     <TableCell className="text-sm">{e.descripcion}</TableCell>
